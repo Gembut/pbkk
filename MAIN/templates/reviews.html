@@ -4,23 +4,288 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>LearnVid AI - Reviews</title>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Montaga&display=swap"
-      rel="stylesheet"
-    />
+    <link rel="icon" type="image/svg+xml" href="/learnvid-ai/static/logo.svg" />
     <script src="https://cdn.lordicon.com/lordicon.js"></script>
     <style>
+      @import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap");
+
+      @font-face {
+        font-family: "Cabinet Grotesk";
+        src: url("{{ url_for('static', path='font/CabinetGrotesk-Regular.woff2') }}")
+            format("woff2"),
+          url("{{ url_for('static', path='font/CabinetGrotesk-Regular.woff') }}")
+            format("woff");
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      :root {
+        --font-display: "Cabinet Grotesk", sans-serif;
+        --font-body: "Montserrat", sans-serif;
+        --nav-height: 88px;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
       body {
-        font-family: "Montaga", serif;
+        font-family: var(--font-body);
         background: linear-gradient(135deg, #112d4e 0%, #1a3f63 100%);
         min-height: 100vh;
         display: flex;
-        align-items: center;
-        justify-content: center;
+        flex-direction: column;
         overflow-x: hidden;
         overflow-y: auto;
         position: relative;
-        padding: 80px 20px 40px;
+      }
+
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6 {
+        font-family: var(--font-display);
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px;
+      }
+
+      /* Navigation (matching index) */
+      nav {
+        padding: 20px 0;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        transition: background 0.3s ease, box-shadow 0.3s ease,
+          padding 0.25s ease, transform 0.3s ease;
+        backdrop-filter: blur(0px);
+      }
+
+      .nav-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .logo {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #f9f7f7;
+        display: none;
+      }
+
+      .nav-links {
+        display: flex;
+        gap: 40px;
+        list-style: none;
+      }
+
+      .nav-links a {
+        color: #dbe2ef;
+        text-decoration: none;
+        font-size: 16px;
+        transition: all 0.3s ease;
+        position: relative;
+      }
+
+      .nav-links a::after {
+        content: "";
+        position: absolute;
+        bottom: -5px;
+        left: 0;
+        width: 0;
+        height: 2px;
+        background: #f9f7f7;
+        transition: width 0.3s ease;
+      }
+
+      .nav-links a:hover::after,
+      .nav-links a[href="/reviews"]::after {
+        width: 100%;
+      }
+
+      .nav-links a:hover,
+      .nav-links a[href="/reviews"] {
+        color: #f9f7f7;
+      }
+
+      .nav-buttons {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+      }
+
+      .register-btn {
+        background: #f9f7f7;
+        color: #112d4e;
+        padding: 12px 24px;
+        border-radius: 25px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        border: 2px solid #f9f7f7;
+      }
+
+      .register-btn:hover {
+        background: transparent;
+        color: #f9f7f7;
+      }
+
+      .login-link {
+        color: #dbe2ef;
+        text-decoration: none;
+        transition: color 0.3s ease;
+      }
+
+      .login-link:hover {
+        color: #f9f7f7;
+      }
+
+      nav.nav-scrolled {
+        background: rgba(13, 31, 55, 0.9);
+        backdrop-filter: blur(12px);
+        box-shadow: 0 14px 40px rgba(0, 0, 0, 0.35);
+        padding: 14px 0;
+        animation: navReveal 0.35s ease;
+        border-bottom: 1px solid rgba(219, 226, 239, 0.15);
+      }
+
+      nav.nav-hidden {
+        transform: translateY(-100%);
+      }
+
+      /* Mobile Menu (matching index) */
+      .mobile-menu-btn {
+        display: none;
+        flex-direction: column;
+        gap: 7px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 5px;
+      }
+
+      .mobile-menu-btn span {
+        width: 25px;
+        height: 3px;
+        background: #f9f7f7;
+        border-radius: 2px;
+        transition: all 0.3s ease;
+      }
+
+      .mobile-menu-btn.active span:nth-child(1) {
+        transform: rotate(45deg) translate(8px, 8px);
+      }
+
+      .mobile-menu-btn.active span:nth-child(2) {
+        opacity: 0;
+      }
+
+      .mobile-menu-btn.active span:nth-child(3) {
+        transform: rotate(-45deg) translate(7px, -7px);
+      }
+
+      .mobile-nav {
+        display: none;
+        position: fixed;
+        top: var(--nav-height, 70px);
+        left: 0;
+        right: 0;
+        background: rgba(17, 45, 78, 0.98);
+        backdrop-filter: blur(20px);
+        padding: 20px;
+        z-index: 99;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      }
+
+      .mobile-nav.active {
+        display: block;
+        animation: slideDown 0.3s ease;
+      }
+
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes navReveal {
+        from {
+          transform: translateY(-14px);
+          opacity: 0.9;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      .mobile-nav ul {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      .mobile-nav a {
+        color: #dbe2ef;
+        text-decoration: none;
+        font-size: 18px;
+        display: block;
+        padding: 10px;
+        transition: color 0.3s ease;
+      }
+
+      .mobile-nav a:hover,
+      .mobile-nav a[href="/reviews"] {
+        color: #f9f7f7;
+        font-weight: bold;
+      }
+
+      /* Back to Chat Button */
+      .back-to-chat {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 20px;
+        background: linear-gradient(135deg, #3f72af 0%, #2d5a94 100%);
+        border: none;
+        border-radius: 12px;
+        color: #f9f7f7;
+        font-family: var(--font-display);
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        z-index: 10000;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        box-shadow: 0 4px 20px rgba(63, 114, 175, 0.4);
+      }
+
+      .back-to-chat:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 25px rgba(63, 114, 175, 0.6);
+      }
+
+      .back-to-chat svg {
+        width: 18px;
+        height: 18px;
       }
 
       .bg-animations {
@@ -28,11 +293,12 @@
         inset: 0;
         pointer-events: none;
         z-index: 1;
+        overflow: hidden;
       }
 
       .floating-symbol {
         position: absolute;
-        font-family: "Montaga", serif;
+        font-family: var(--font-display);
         font-weight: bold;
         opacity: 0;
         will-change: transform, opacity;
@@ -70,6 +336,14 @@
         display: flex;
         flex-direction: column;
         gap: 30px;
+        margin: 50px auto 60px;
+      }
+
+      main {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        padding: 90px 20px 60px;
       }
 
       .review-form-container {
@@ -137,12 +411,11 @@
         padding: 14px 16px;
         border: 2px solid #dbe2ef;
         border-radius: 12px;
-        font-family: "Montaga", serif;
+        font-family: var(--font-body);
         font-size: 14px;
         background: #f9f7f7;
         color: #112d4e;
         transition: all 0.3s ease;
-        box-sizing: border-box;
         outline: none;
       }
 
@@ -189,14 +462,17 @@
         cursor: pointer;
         margin-top: 10px;
         transition: 0.3s;
-        box-sizing: border-box;
-        font-family: "Montaga", serif;
+        font-family: var(--font-display);
       }
 
       .submit-btn:hover {
         background: #2d5a94;
         transform: translateY(-2px);
         box-shadow: 0 8px 25px rgba(63, 114, 175, 0.3);
+      }
+
+      .submit-btn:active {
+        transform: translateY(0);
       }
 
       .reviews-container {
@@ -229,7 +505,7 @@
         padding: 12px 16px;
         border: 2px solid #dbe2ef;
         border-radius: 12px;
-        font-family: "Montaga", serif;
+        font-family: var(--font-body);
         font-size: 14px;
         background: #f9f7f7;
         color: #112d4e;
@@ -246,7 +522,7 @@
         padding: 12px 16px;
         border: 2px solid #dbe2ef;
         border-radius: 12px;
-        font-family: "Montaga", serif;
+        font-family: var(--font-body);
         font-size: 14px;
         background: #f9f7f7;
         color: #112d4e;
@@ -337,7 +613,7 @@
         border: 2px solid #dbe2ef;
         border-radius: 8px;
         color: #112d4e;
-        font-family: "Montaga", serif;
+        font-family: var(--font-body);
         font-size: 14px;
         cursor: pointer;
         transition: all 0.3s ease;
@@ -369,19 +645,337 @@
         padding: 0 10px;
       }
 
+      .char-counter {
+        display: block;
+        text-align: right;
+        font-size: 12px;
+        color: #3f72af;
+        margin-top: 4px;
+        opacity: 0.8;
+      }
+
+      /* ==== Custom Modal ==== */
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.55);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 11000;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s ease;
+      }
+
+      .modal-backdrop.show {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .modal-card {
+        background: #f9f7f7;
+        border-radius: 20px;
+        padding: 24px 24px 20px;
+        max-width: 360px;
+        width: 90%;
+        box-shadow: 0 20px 60px rgba(17, 45, 78, 0.4);
+        text-align: left;
+        position: relative;
+        transform: translateY(10px);
+        animation: modalSlideUp 0.25s ease forwards;
+      }
+
+      @keyframes modalSlideUp {
+        from {
+          opacity: 0;
+          transform: translateY(18px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .modal-title {
+        font-family: var(--font-display);
+        font-size: 1.1rem;
+        color: #112d4e;
+        margin-bottom: 6px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .modal-title span.icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        border-radius: 999px;
+        background: #3f72af1a;
+        color: #3f72af;
+        font-size: 15px;
+      }
+
+      .modal-message {
+        font-size: 0.95rem;
+        color: #243b61;
+        line-height: 1.5;
+        margin-bottom: 16px;
+      }
+
+      .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 8px;
+      }
+
+      .modal-btn {
+        border: none;
+        border-radius: 999px;
+        padding: 8px 18px;
+        font-family: var(--font-body);
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .modal-btn-primary {
+        background: #3f72af;
+        color: #f9f7f7;
+        box-shadow: 0 6px 18px rgba(63, 114, 175, 0.45);
+      }
+
+      .modal-btn-primary:hover {
+        background: #2d5a94;
+        transform: translateY(-1px);
+        box-shadow: 0 8px 24px rgba(63, 114, 175, 0.6);
+      }
+
+      .modal-btn-ghost {
+        background: transparent;
+        color: #3f72af;
+      }
+
+      /* Footer */
+      footer {
+        padding: 32px 0;
+        background: rgba(13, 31, 55, 0.9);
+        border-top: 1px solid rgba(219, 226, 239, 0.12);
+        margin-top: 60px;
+        width: 100%;
+        position: relative;
+        overflow: hidden;
+      }
+
+      footer::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(
+          circle at 10% 10%,
+          rgba(108, 194, 255, 0.07),
+          transparent 35%
+        );
+        pointer-events: none;
+      }
+
+      .footer-content {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        gap: 12px 18px;
+        color: #dbe2ef;
+        font-size: 0.95rem;
+        position: relative;
+        z-index: 1;
+      }
+
+      .footer-brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .footer-links {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+
+      .footer-links a {
+        color: #dbe2ef;
+        text-decoration: none;
+        transition: color 0.2s ease;
+      }
+
+      .footer-links a:hover {
+        color: #f9f7f7;
+      }
+
+      @media (max-width: 720px) {
+        footer {
+          padding: 28px 0 34px;
+        }
+
+        .footer-content {
+          grid-template-columns: 1fr;
+          text-align: center;
+          justify-items: center;
+          gap: 14px;
+        }
+
+        .footer-brand {
+          justify-content: center;
+        }
+
+        .footer-links {
+          justify-content: center;
+        }
+      }
+
+      /* ===== RESPONSIVE STYLES ===== */
+
+      /* Tablets */
+      @media (max-width: 1024px) {
+        .main-container {
+          max-width: 800px;
+        }
+
+        th,
+        td {
+          padding: 14px 12px;
+        }
+
+        .container {
+          padding: 0 30px;
+        }
+
+        .nav-links {
+          gap: 30px;
+        }
+
+        .nav-links a {
+          font-size: 15px;
+        }
+      }
+
       @media (max-width: 768px) {
         body {
-          padding: 100px 15px 30px;
+          padding: 0;
+        }
+
+        .logo {
+          display: block;
+          font-size: 1.3rem;
+        }
+
+        .nav-links {
+          display: none;
+        }
+
+        .mobile-menu-btn {
+          display: flex;
+        }
+
+        .nav-buttons {
+          gap: 15px;
+        }
+
+        nav.nav-scrolled {
+          padding: 12px 0;
+        }
+
+        .register-btn {
+          padding: 10px 20px;
+          font-size: 14px;
+        }
+
+        .login-link {
+          font-size: 14px;
+        }
+
+        .back-to-chat {
+          top: 15px;
+          left: 15px;
+          padding: 10px 16px;
+          font-size: 13px;
+        }
+
+        .back-to-chat svg {
+          width: 16px;
+          height: 16px;
+        }
+
+        .main-container {
+          gap: 25px;
+          margin: 30px auto 50px;
+          padding: 0 16px;
+        }
+
+        main {
+          padding: 80px 12px 50px;
         }
 
         .review-form-container,
         .reviews-container {
-          padding: 30px 20px;
+          padding: 35px 25px;
+          border-radius: 20px;
+        }
+
+        .icon-container {
+          width: 90px;
+          height: 90px;
+          top: -45px;
+        }
+
+        .icon-container lord-icon {
+          width: 60px !important;
+          height: 60px !important;
         }
 
         .review-title,
         .reviews-title {
-          font-size: 1.5rem;
+          font-size: 1.6rem;
+          margin-bottom: 25px;
+        }
+
+        .form-label {
+          font-size: 13px;
+        }
+
+        .form-input {
+          padding: 12px 14px;
+          font-size: 13px;
+        }
+
+        .star {
+          font-size: 2.2rem;
+          gap: 6px;
+        }
+
+        .submit-btn {
+          padding: 14px;
+          font-size: 15px;
+        }
+
+        .table-controls {
+          gap: 12px;
+        }
+
+        .search-box,
+        .sort-select {
+          padding: 10px 14px;
+          font-size: 13px;
+          min-width: 150px;
         }
 
         table {
@@ -390,153 +984,601 @@
 
         th,
         td {
-          padding: 12px 8px;
+          padding: 12px 10px;
+        }
+
+        .rating-stars {
+          font-size: 1rem;
+        }
+
+        .page-btn {
+          padding: 8px 14px;
+          font-size: 13px;
+        }
+
+        /* Hide background animations on mobile */
+        .floating-symbol {
+          display: none;
+        }
+      }
+
+      @media (max-width: 600px) {
+        body {
+          padding: 0;
+        }
+
+        nav.nav-scrolled {
+          padding: 10px 0;
+        }
+
+        .register-btn {
+          padding: 9px 18px;
+          font-size: 13px;
+        }
+
+        .back-to-chat {
+          top: 12px;
+          left: 12px;
+          padding: 8px 14px;
+          font-size: 12px;
+        }
+
+        .back-to-chat svg {
+          width: 14px;
+          height: 14px;
+        }
+
+        .review-form-container,
+        .reviews-container {
+          padding: 30px 20px;
+          border-radius: 18px;
+        }
+
+        .icon-container {
+          width: 80px;
+          height: 80px;
+          top: -40px;
+        }
+
+        .icon-container lord-icon {
+          width: 55px !important;
+          height: 55px !important;
+        }
+
+        .review-title,
+        .reviews-title {
+          font-size: 1.4rem;
+          margin: 15px 0 20px;
+        }
+
+        .form-group {
+          margin-bottom: 16px;
+        }
+
+        .form-label {
+          font-size: 12px;
+          margin-bottom: 5px;
+        }
+
+        .form-input {
+          padding: 11px 12px;
+          font-size: 13px;
+          border-radius: 10px;
+        }
+
+        textarea.form-input {
+          min-height: 100px;
+        }
+
+        .star-rating {
+          gap: 6px;
+          margin: 12px 0;
         }
 
         .star {
           font-size: 2rem;
         }
+
+        .submit-btn {
+          padding: 13px;
+          font-size: 14px;
+          border-radius: 10px;
+        }
+
+        .char-counter {
+          font-size: 11px;
+        }
+
+        .table-controls {
+          flex-direction: column;
+          gap: 10px;
+        }
+
+        .search-box {
+          width: 100%;
+          min-width: auto;
+        }
+
+        .sort-select {
+          width: 100%;
+        }
+
+        /* Make table scrollable on small screens */
+        .reviews-table-wrapper {
+          -webkit-overflow-scrolling: touch;
+        }
+
+        table {
+          font-size: 12px;
+          min-width: 600px;
+        }
+
+        th {
+          padding: 10px 8px;
+          font-size: 11px;
+        }
+
+        td {
+          padding: 10px 8px;
+        }
+
+        .rating-stars {
+          font-size: 0.9rem;
+        }
+
+        .empty-state {
+          padding: 30px 20px;
+          font-size: 1rem;
+        }
+
+        .pagination {
+          gap: 6px;
+          margin-top: 20px;
+        }
+
+        .page-btn {
+          padding: 7px 12px;
+          font-size: 12px;
+          min-width: 36px;
+        }
+
+        .page-info {
+          font-size: 12px;
+          padding: 0 5px;
+        }
+
+        main {
+          padding: 75px 12px 45px;
+        }
+      }
+
+      @media (max-width: 480px) {
+        body {
+          padding: 0;
+        }
+
+        .back-to-chat {
+          top: 10px;
+          left: 10px;
+          padding: 7px 12px;
+          font-size: 11px;
+          border-radius: 10px;
+        }
+
+        .main-container {
+          gap: 20px;
+        }
+
+        .review-form-container,
+        .reviews-container {
+          padding: 25px 15px;
+          border-radius: 16px;
+        }
+
+        .icon-container {
+          width: 70px;
+          height: 70px;
+          top: -35px;
+        }
+
+        .icon-container lord-icon {
+          width: 50px !important;
+          height: 50px !important;
+        }
+
+        .review-title,
+        .reviews-title {
+          font-size: 1.3rem;
+          margin: 12px 0 18px;
+        }
+
+        .form-group {
+          margin-bottom: 14px;
+        }
+
+        .form-label {
+          font-size: 11px;
+        }
+
+        .form-input {
+          padding: 10px;
+          font-size: 12px;
+        }
+
+        textarea.form-input {
+          min-height: 90px;
+        }
+
+        .star {
+          font-size: 1.8rem;
+        }
+
+        .submit-btn {
+          padding: 12px;
+          font-size: 13px;
+        }
+
+        table {
+          min-width: 550px;
+          font-size: 11px;
+        }
+
+        th,
+        td {
+          padding: 8px 6px;
+        }
+
+        th {
+          font-size: 10px;
+        }
+
+        .rating-stars {
+          font-size: 0.85rem;
+        }
+
+        .page-btn {
+          padding: 6px 10px;
+          font-size: 11px;
+          min-width: 32px;
+        }
+
+        .footer-content {
+          justify-content: center;
+          text-align: center;
+        }
+
+        .footer-links {
+          justify-content: center;
+        }
+
+        main {
+          padding: 70px 10px 40px;
+        }
+      }
+
+      /* Very small screens */
+      @media (max-width: 360px) {
+        .review-title,
+        .reviews-title {
+          font-size: 1.2rem;
+        }
+
+        .star {
+          font-size: 1.6rem;
+        }
+
+        table {
+          min-width: 500px;
+        }
+      }
+
+      /* Landscape mobile */
+      @media (max-height: 600px) and (orientation: landscape) {
+        body {
+          padding: 70px 15px 20px;
+        }
+
+        .icon-container {
+          width: 60px;
+          height: 60px;
+          top: -30px;
+        }
+
+        .icon-container lord-icon {
+          width: 45px !important;
+          height: 45px !important;
+        }
+
+        .review-title,
+        .reviews-title {
+          font-size: 1.3rem;
+          margin: 10px 0 15px;
+        }
+
+        .form-group {
+          margin-bottom: 12px;
+        }
+
+        textarea.form-input {
+          min-height: 80px;
+        }
+
+        .star-rating {
+          margin: 10px 0;
+        }
       }
     </style>
   </head>
   <body>
+    <nav>
+      <div class="container">
+        <div class="nav-container">
+          <div class="logo">LearnVid AI</div>
+          <ul class="nav-links">
+            <li><a href="/learnvid-ai/">Home</a></li>
+            <li><a href="/learnvid-ai/how-it-works">How it works</a></li>
+            <li><a href="/learnvid-ai/faq">FAQ</a></li>
+            <li><a href="/learnvid-ai/reviews">Reviews</a></li>
+          </ul>
+          <div class="nav-buttons">
+            <a href="/learnvid-ai/register" class="register-btn">Register</a>
+            <a href="/learnvid-ai/login" class="login-link">Login</a>
+          </div>
+          <button class="mobile-menu-btn" aria-label="Toggle menu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <div class="mobile-nav">
+      <ul>
+        <li><a href="/learnvid-ai/">Home</a></li>
+        <li><a href="/learnvid-ai/how-it-works">How it works</a></li>
+        <li><a href="/learnvid-ai/faq">FAQ</a></li>
+        <li><a href="/learnvid-ai/reviews">Reviews</a></li>
+      </ul>
+    </div>
+
     <div class="bg-animations"></div>
 
-    <div class="main-container">
-      <!-- Review Form Section -->
-      <div class="review-form-container">
-        <div class="icon-container">
-          <lord-icon
-            src="https://cdn.lordicon.com/cvwrvyjv.json"
-            trigger="loop"
-            delay="500"
-            state="hover-wink"
-            colors="primary:#dbe2ef,secondary:#dbe2ef"
-            style="width: 70px; height: 70px"
-          >
-          </lord-icon>
-        </div>
-
-        <h1 class="review-title">Leave a Review</h1>
-
-        <form id="reviewForm" novalidate>
-          <div class="form-group">
-            <label class="form-label" for="nama"
-              ><span class="required">*</span> Nama</label
+    <main>
+      <div class="main-container">
+        <!-- Review Form -->
+        <div class="review-form-container">
+          <div class="icon-container">
+            <lord-icon
+              src="https://cdn.lordicon.com/cvwrvyjv.json"
+              trigger="loop"
+              delay="500"
+              state="hover-wink"
+              colors="primary:#dbe2ef,secondary:#dbe2ef"
+              style="width: 70px; height: 70px"
             >
-            <input
-              id="nama"
-              name="nama"
-              type="text"
-              class="form-input"
-              placeholder="Enter your name"
-              required
-            />
+            </lord-icon>
           </div>
 
-          <div class="form-group">
-            <label class="form-label" for="nrp"
-              ><span class="required">*</span> NRP</label
-            >
-            <input
-              id="nrp"
-              name="nrp"
-              type="text"
-              class="form-input"
-              placeholder="Enter your NRP"
-              required
-            />
-          </div>
+          <h1 class="review-title">Leave a Review</h1>
 
-          <div class="form-group">
-            <label class="form-label" for="kelompok"
-              ><span class="required">*</span> Kelompok</label
-            >
-            <input
-              id="kelompok"
-              name="kelompok"
-              type="text"
-              class="form-input"
-              placeholder="Enter your group"
-              required
-            />
-          </div>
-
-          <div class="form-group">
-            <label class="form-label"
-              ><span class="required">*</span> Rate our Website</label
-            >
-            <div class="star-rating">
-              <span class="star" data-rating="1">★</span>
-              <span class="star" data-rating="2">★</span>
-              <span class="star" data-rating="3">★</span>
-              <span class="star" data-rating="4">★</span>
-              <span class="star" data-rating="5">★</span>
+          <form id="reviewForm" novalidate>
+            <div class="form-group">
+              <label class="form-label" for="nama"
+                ><span class="required">*</span> Name
+                <!-- <span style="font-size: 12px; color: #3f72af">(Max 50 characters)</span> -->
+              </label>
+              <input
+                id="nama"
+                name="nama"
+                type="text"
+                class="form-input"
+                placeholder="Enter your name"
+                maxlength="30"
+                required
+              />
+              <small class="char-counter" id="namaCounter">0/30</small>
             </div>
-            <input type="hidden" id="rating" name="rating" value="0" required />
+
+            <div class="form-group">
+              <label class="form-label" for="email"
+                ><span class="required">*</span> Email
+                <!-- <span style="font-size: 12px; color: #3f72af">(Max 20 characters)</span> -->
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                class="form-input"
+                placeholder="Enter your email"
+                maxlength="50"
+                required
+              />
+              <small class="char-counter" id="emailCounter">0/50</small>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="instansi"
+                ><span class="required">*</span> Organization
+                <!-- <span style="font-size: 12px; color: #3f72af">(Max 30 characters)</span> -->
+              </label>
+              <input
+                id="instansi"
+                name="instansi"
+                type="text"
+                class="form-input"
+                placeholder="Enter your organization"
+                maxlength="50"
+                required
+              />
+              <small class="char-counter" id="instansiCounter">0/50</small>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label"
+                ><span class="required">*</span> Rate our Website</label
+              >
+              <div class="star-rating">
+                <span class="star" data-rating="1">★</span>
+                <span class="star" data-rating="2">★</span>
+                <span class="star" data-rating="3">★</span>
+                <span class="star" data-rating="4">★</span>
+                <span class="star" data-rating="5">★</span>
+              </div>
+              <input
+                type="hidden"
+                id="rating"
+                name="rating"
+                value="0"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="review"
+                ><span class="required">*</span> Review
+                <!-- <span style="font-size: 12px; color: #3f72af">(Max 500 characters)</span> -->
+              </label>
+              <textarea
+                id="review"
+                name="review"
+                class="form-input"
+                placeholder="Write your review here..."
+                maxlength="500"
+                required
+              ></textarea>
+              <small class="char-counter" id="reviewCounter">0/500</small>
+            </div>
+
+            <button type="submit" class="submit-btn">Send Review</button>
+          </form>
+        </div>
+
+        <!-- Reviews Table -->
+        <div class="reviews-container">
+          <h2 class="reviews-title">What Others Are Saying</h2>
+
+          <div class="table-controls">
+            <input
+              type="text"
+              id="searchInput"
+              class="search-box"
+              placeholder="Search by name, email, or review..."
+            />
+            <select id="sortSelect" class="sort-select">
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+              <option value="highest">Highest Rating</option>
+              <option value="lowest">Lowest Rating</option>
+              <option value="name">Name (A-Z)</option>
+            </select>
           </div>
 
-          <div class="form-group">
-            <label class="form-label" for="review"
-              ><span class="required">*</span> Review</label
-            >
-            <textarea
-              id="review"
-              name="review"
-              class="form-input"
-              placeholder="Write your review here..."
-              required
-            ></textarea>
+          <div class="reviews-table-wrapper">
+            <table id="reviewsTable">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Organization</th>
+                  <th>Rating</th>
+                  <th>Review</th>
+                </tr>
+              </thead>
+              <tbody id="reviewsBody">
+                <!-- Filled dynamically -->
+              </tbody>
+            </table>
           </div>
 
-          <button type="submit" class="submit-btn">Send Review</button>
-        </form>
+          <div class="pagination" id="pagination"></div>
+        </div>
       </div>
+    </main>
 
-      <!-- Reviews Table Section -->
-      <div class="reviews-container">
-        <h2 class="reviews-title">Other People Reviews</h2>
-
-        <div class="table-controls">
-          <input
-            type="text"
-            id="searchInput"
-            class="search-box"
-            placeholder="🔍 Search by name, NRP, or review..."
-          />
-          <select id="sortSelect" class="sort-select">
-            <option value="newest">Newest First</option>
-            <option value="oldest">Oldest First</option>
-            <option value="highest">Highest Rating</option>
-            <option value="lowest">Lowest Rating</option>
-            <option value="name">Name (A-Z)</option>
-          </select>
+    <footer>
+      <div class="footer-content">
+        <div class="footer-brand">
+          <div class="footer-copy">
+            &copy; 2025 LearnVid AI. All rights reserved.
+          </div>
         </div>
-
-        <div class="reviews-table-wrapper">
-          <table id="reviewsTable">
-            <thead>
-              <tr>
-                <th>Nama</th>
-                <th>NRP</th>
-                <th>Kelompok</th>
-                <th>Rating</th>
-                <th>Review</th>
-              </tr>
-            </thead>
-            <tbody id="reviewsBody">
-              <!-- Reviews will be inserted here -->
-            </tbody>
-          </table>
+        <div class="footer-links">
+          <a href="/learnvid-ai/how-it-works">How it works</a>
+          <a href="/learnvid-ai/faq">FAQ</a>
+          <a href="/learnvid-ai/reviews">Reviews</a>
         </div>
+      </div>
+    </footer>
 
-        <div class="pagination" id="pagination">
-          <!-- Pagination will be inserted here -->
+    <!-- Custom Modal -->
+    <div id="appModal" class="modal-backdrop">
+      <div class="modal-card">
+        <div class="modal-title">
+          <span class="icon">!</span>
+          <span id="modalTitle">Notification</span>
+        </div>
+        <div id="modalMessage" class="modal-message">Message</div>
+        <div class="modal-actions">
+          <button
+            type="button"
+            id="modalCloseBtn"
+            class="modal-btn modal-btn-primary"
+          >
+            OK
+          </button>
         </div>
       </div>
     </div>
 
     <script>
+      // Nav state and mobile menu
+      const nav = document.querySelector("nav");
+
+      const setNavHeight = () => {
+        if (!nav) return;
+        document.documentElement.style.setProperty(
+          "--nav-height",
+          `${nav.offsetHeight}px`
+        );
+      };
+
+      const updateNavState = () => {
+        const scrolled = window.scrollY > 10;
+        nav.classList.toggle("nav-scrolled", scrolled);
+        nav.classList.remove("nav-hidden");
+        setNavHeight();
+      };
+
+      updateNavState();
+      window.addEventListener("resize", setNavHeight);
+      window.addEventListener("scroll", updateNavState);
+
+      const mobileMenuBtn = document.querySelector(".mobile-menu-btn");
+      const mobileNav = document.querySelector(".mobile-nav");
+
+      mobileMenuBtn.addEventListener("click", function () {
+        this.classList.toggle("active");
+        mobileNav.classList.toggle("active");
+      });
+
+      document.addEventListener("click", function (event) {
+        const isClickInside =
+          mobileMenuBtn.contains(event.target) ||
+          mobileNav.contains(event.target);
+        if (!isClickInside && mobileNav.classList.contains("active")) {
+          mobileMenuBtn.classList.remove("active");
+          mobileNav.classList.remove("active");
+        }
+      });
+
+      document.querySelectorAll(".mobile-nav a").forEach((link) => {
+        link.addEventListener("click", () => {
+          mobileMenuBtn.classList.remove("active");
+          mobileNav.classList.remove("active");
+        });
+      });
+
       // Background animation
       const container = document.querySelector(".bg-animations");
       const symbols = [
@@ -608,10 +1650,14 @@
         container.appendChild(el);
         setTimeout(() => el.remove(), parseFloat(duration) * 1000);
       }
-      setInterval(() => {
-        for (let i = 0, n = 1 + Math.floor(Math.random() * 3); i < n; i++)
-          spawnSymbol();
-      }, 700);
+
+      // Only run animation on larger screens
+      if (window.innerWidth > 768) {
+        setInterval(() => {
+          for (let i = 0, n = 1 + Math.floor(Math.random() * 3); i < n; i++)
+            spawnSymbol();
+        }, 700);
+      }
 
       // Star rating functionality
       const stars = document.querySelectorAll(".star");
@@ -647,49 +1693,90 @@
         });
       }
 
-      // Sample reviews data
+      // Char Counter
+      function setupCharCounter(id, counter, max) {
+        const input = document.getElementById(id),
+          label = document.getElementById(counter);
+        input.addEventListener("input", () => {
+          const len = input.value.length;
+          label.textContent = `${len}/${max}`;
+        });
+      }
+      setupCharCounter("nama", "namaCounter", 30);
+      setupCharCounter("email", "emailCounter", 50);
+      setupCharCounter("instansi", "instansiCounter", 50);
+      setupCharCounter("review", "reviewCounter", 500);
+
+      // Review Logic
       let reviews = [];
+      let filteredReviews = [];
       let currentPage = 1;
       const itemsPerPage = 10;
-      let filteredReviews = [];
 
-      // Ambil review dari server
-      async function fetchReviews() {
-        const res = await fetch("/api/reviews");
-        if (!res.ok) {
-          alert("Gagal memuat review dari server");
-          return;
-        }
-        reviews = await res.json();
-        filteredReviews = [...reviews];
-        renderReviews();
+      // Simple helper to show custom modal
+      function showModal(message, title = "Notification") {
+        const backdrop = document.getElementById("appModal");
+        const titleEl = document.getElementById("modalTitle");
+        const msgEl = document.getElementById("modalMessage");
+        titleEl.textContent = title;
+        msgEl.textContent = message;
+        backdrop.classList.add("show");
       }
 
-fetchReviews();
+      (function initModal() {
+        const backdrop = document.getElementById("appModal");
+        const closeBtn = document.getElementById("modalCloseBtn");
 
+        function hide() {
+          backdrop.classList.remove("show");
+        }
 
-      // Function to filter reviews
-      function filterReviews(searchTerm) {
-        const term = searchTerm.toLowerCase();
+        closeBtn.addEventListener("click", hide);
+        backdrop.addEventListener("click", (e) => {
+          if (e.target === backdrop) hide();
+        });
+        window.addEventListener("keydown", (e) => {
+          if (e.key === "Escape") hide();
+        });
+      })();
+
+      async function fetchReviews() {
+        try {
+          const res = await fetch("/learnvid-ai/api/reviews");
+          if (!res.ok) throw new Error("Failed to fetch reviews");
+          reviews = await res.json();
+          filteredReviews = [...reviews];
+          renderReviews();
+        } catch (err) {
+          console.error(err);
+          showModal("Failed to load reviews from the server.", "Error");
+        }
+      }
+
+      function filterReviews(term) {
+        const q = term.toLowerCase();
         filteredReviews = reviews.filter(
           (r) =>
-            r.nama.toLowerCase().includes(term) ||
-            r.nrp.toLowerCase().includes(term) ||
-            r.review.toLowerCase().includes(term) ||
-            r.kelompok.toLowerCase().includes(term)
+            r.nama.toLowerCase().includes(q) ||
+            r.email.toLowerCase().includes(q) ||
+            r.instansi.toLowerCase().includes(q) ||
+            r.review.toLowerCase().includes(q)
         );
         currentPage = 1;
         renderReviews();
       }
 
-      // Function to sort reviews
-      function sortReviews(sortType) {
-        switch (sortType) {
+      function sortReviews(type) {
+        switch (type) {
           case "newest":
-            filteredReviews.sort((a, b) => b.timestamp - a.timestamp);
+            filteredReviews.sort(
+              (a, b) => new Date(b.created_at) - new Date(a.created_at)
+            );
             break;
           case "oldest":
-            filteredReviews.sort((a, b) => a.timestamp - b.timestamp);
+            filteredReviews.sort(
+              (a, b) => new Date(a.created_at) - new Date(b.created_at)
+            );
             break;
           case "highest":
             filteredReviews.sort((a, b) => b.rating - a.rating);
@@ -705,56 +1792,30 @@ fetchReviews();
         renderReviews();
       }
 
-      // Function to render pagination
       function renderPagination() {
-        const totalPages = Math.ceil(filteredReviews.length / itemsPerPage);
-        const pagination = document.getElementById("pagination");
-
-        if (totalPages <= 1) {
-          pagination.innerHTML = "";
+        const total = Math.ceil(filteredReviews.length / itemsPerPage);
+        const el = document.getElementById("pagination");
+        if (total <= 1) {
+          el.innerHTML = "";
           return;
         }
-
-        let html = "";
-
-        // Previous button
-        html += `<button class="page-btn" onclick="changePage(${
+        let html = `<button class="page-btn" onclick="changePage(${
           currentPage - 1
         })" ${currentPage === 1 ? "disabled" : ""}>← Prev</button>`;
-
-        // Page numbers
-        let startPage = Math.max(1, currentPage - 2);
-        let endPage = Math.min(totalPages, currentPage + 2);
-
-        if (startPage > 1) {
-          html += `<button class="page-btn" onclick="changePage(1)">1</button>`;
-          if (startPage > 2) html += `<span class="page-info">...</span>`;
-        }
-
-        for (let i = startPage; i <= endPage; i++) {
+        for (let i = 1; i <= total; i++) {
           html += `<button class="page-btn ${
             i === currentPage ? "active" : ""
           }" onclick="changePage(${i})">${i}</button>`;
         }
-
-        if (endPage < totalPages) {
-          if (endPage < totalPages - 1)
-            html += `<span class="page-info">...</span>`;
-          html += `<button class="page-btn" onclick="changePage(${totalPages})">${totalPages}</button>`;
-        }
-
-        // Next button
         html += `<button class="page-btn" onclick="changePage(${
           currentPage + 1
-        })" ${currentPage === totalPages ? "disabled" : ""}>Next →</button>`;
-
-        pagination.innerHTML = html;
+        })" ${currentPage === total ? "disabled" : ""}>Next →</button>`;
+        el.innerHTML = html;
       }
 
-      // Function to change page
       window.changePage = function (page) {
-        const totalPages = Math.ceil(filteredReviews.length / itemsPerPage);
-        if (page < 1 || page > totalPages) return;
+        const total = Math.ceil(filteredReviews.length / itemsPerPage);
+        if (page < 1 || page > total) return;
         currentPage = page;
         renderReviews();
         document
@@ -762,127 +1823,103 @@ fetchReviews();
           .scrollIntoView({ behavior: "smooth" });
       };
 
-      // Function to render reviews
       function renderReviews() {
         const tbody = document.getElementById("reviewsBody");
-
         if (filteredReviews.length === 0) {
-          tbody.innerHTML = `
-          <tr>
-            <td colspan="5" class="empty-state">
-              <lord-icon
-                src="https://cdn.lordicon.com/hrqwmuhr.json"
-                trigger="loop"
-                colors="primary:#3F72AF,secondary:#112D4E"
-                style="width:80px;height:80px">
-              </lord-icon>
-              <div>No reviews found. Try a different search term.</div>
-            </td>
-          </tr>
-        `;
+          tbody.innerHTML = `<tr><td colspan="5" class="empty-state">
+          <lord-icon src="https://cdn.lordicon.com/hrqwmuhr.json" trigger="loop"
+          colors="primary:#3F72AF,secondary:#112D4E" style="width:80px;height:80px"></lord-icon>
+          <div>No reviews found.</div></td></tr>`;
           renderPagination();
           return;
         }
-
-        const startIndex = (currentPage - 1) * itemsPerPage;
-        const endIndex = startIndex + itemsPerPage;
-        const pageReviews = filteredReviews.slice(startIndex, endIndex);
-
-        tbody.innerHTML = pageReviews
+        const start = (currentPage - 1) * itemsPerPage;
+        const page = filteredReviews.slice(start, start + itemsPerPage);
+        tbody.innerHTML = page
           .map(
             (r) => `
         <tr>
           <td>${r.nama}</td>
-          <td>${r.nrp}</td>
-          <td>${r.kelompok}</td>
+          <td>${r.email}</td>
+          <td>${r.instansi}</td>
           <td><span class="rating-stars">${"★".repeat(r.rating)}${"☆".repeat(
               5 - r.rating
             )}</span></td>
           <td>${r.review}</td>
-        </tr>
-      `
+        </tr>`
           )
           .join("");
-
         renderPagination();
       }
 
-      // Search functionality
+      // Search & Sort
       document
         .getElementById("searchInput")
-        .addEventListener("input", function (e) {
-          filterReviews(e.target.value);
-        });
-
-      // Sort functionality
+        .addEventListener("input", (e) => filterReviews(e.target.value));
       document
         .getElementById("sortSelect")
-        .addEventListener("change", function (e) {
-          sortReviews(e.target.value);
-        });
+        .addEventListener("change", (e) => sortReviews(e.target.value));
 
-      // Form submission
-
+      // Submit Form
       document
         .getElementById("reviewForm")
         .addEventListener("submit", async function (e) {
           e.preventDefault();
-
-          const formData = {
+          const data = {
             nama: document.getElementById("nama").value.trim(),
-            nrp: document.getElementById("nrp").value.trim(),
-            kelompok: document.getElementById("kelompok").value.trim(),
+            email: document.getElementById("email").value.trim(),
+            instansi: document.getElementById("instansi").value.trim(),
             rating: parseInt(ratingInput.value),
             review: document.getElementById("review").value.trim(),
           };
 
-          // 🔍 Validasi
-          if (!formData.nama || !formData.nrp || !formData.kelompok || !formData.review) {
-            alert("Please fill in all required fields!");
+          if (!data.nama || !data.email || !data.instansi || !data.review) {
+            showModal("Please fill in all required fields!", "Validation");
             return;
           }
 
-          if (formData.rating === 0) {
-            alert("Please select a rating!");
+          // Simple email format validation
+          const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailPattern.test(data.email)) {
+            showModal("Please enter a valid email address!", "Validation");
+            return;
+          }
+
+          if (data.rating === 0) {
+            showModal("Please select a rating!", "Validation");
             return;
           }
 
           try {
-            // ✅ Kirim ke backend
-            const res = await fetch("/api/reviews", {
+            const res = await fetch("/learnvid-ai/api/reviews", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(formData),
+              body: JSON.stringify(data),
             });
-
-            if (!res.ok) {
-              throw new Error("Gagal mengirim review ke server.");
-            }
-
-            const data = await res.json();
-            // alert(data.message || "Thank you for your review!");
-
-            // 🔁 Refresh tabel dari DB
+            if (!res.ok) throw new Error("Failed to send review");
             await fetchReviews();
-
-            // 🔄 Reset form
             this.reset();
             ratingInput.value = 0;
             currentRating = 0;
             updateStars(0);
 
-            // 🎯 Scroll ke tabel review
-            document.querySelector(".reviews-container").scrollIntoView({ behavior: "smooth" });
+            // Reset char counters
+            document.getElementById("namaCounter").textContent = "0/30";
+            document.getElementById("emailCounter").textContent = "0/50";
+            document.getElementById("instansiCounter").textContent = "0/50";
+            document.getElementById("reviewCounter").textContent = "0/500";
 
+            document
+              .querySelector(".reviews-container")
+              .scrollIntoView({ behavior: "smooth" });
           } catch (err) {
             console.error(err);
-            alert("Terjadi kesalahan saat mengirim review!");
+            showModal("Something went wrong while sending your review.", "Error");
           }
         });
 
-      // Initial render
-      renderReviews();
+      // Init
+      fetchReviews();
     </script>
-
   </body>
 </html>

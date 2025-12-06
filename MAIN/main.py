@@ -1,25 +1,27 @@
+import json
 import os
-from typing import Optional
 from contextlib import asynccontextmanager
-from MAIN.AI.app import generate_educational_video
-
-from fastapi import FastAPI, Request, Form, Depends, HTTPException, Body
-from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, Response
-from fastapi.templating import Jinja2Templates
-
-from pydantic import BaseModel
 from datetime import datetime
-from sqlmodel import SQLModel, Field, Session, create_engine, select
-from passlib.context import CryptContext
-from itsdangerous import URLSafeSerializer, BadSignature 
-from sqlalchemy import func  
-
 from pathlib import Path
+from typing import Optional
+
 from dotenv import load_dotenv
+from fastapi import Body, Depends, FastAPI, Form, HTTPException, Request
+from fastapi.responses import HTMLResponse, RedirectResponse, Response, StreamingResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.exception_handlers import http_exception_handler
+from fastapi.templating import Jinja2Templates
+from itsdangerous import BadSignature, URLSafeSerializer
+from langchain_google_genai import ChatGoogleGenerativeAI
+from passlib.context import CryptContext
+from pydantic import BaseModel
+from sqlmodel import SQLModel, Field, Session, create_engine, select
+
+from MAIN.AI.app import generate_educational_video, generate_video_for_topic_with_progress
 
 # === Load .env dari lokasi AI, MAIN, atau root ===
-BASE_DIR = Path(__file__).resolve().parent
-project_root = BASE_DIR.parent
+BASE_DIR = Path(__file__).resolve().parent       # .../FP/MAIN
+project_root = BASE_DIR.parent                   # .../FP
 env_paths = [
     BASE_DIR / ".env",           # MAIN/.env
     project_root / ".env",       # FP/.env
@@ -79,9 +81,90 @@ pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
 
+
+def _title_from_video_url(video_url: str | None) -> str:
+    """
+    Ekstrak judul video dari format nama file baru:
+      {msgId}_{tanggal}_{waktu}_{title}.mp4
+    Contoh:
+      76_20251130_222549_newton_2.mp4 -> "Newton 2"
+    """
+    if not video_url:
+        return "Untitled Video"
+
+    filename = os.path.basename(video_url).split("?", 1)[0]
+    name, _ = os.path.splitext(filename)
+
+    # Pecah menjadi 4 bagian:
+    # [msgId, tanggal, waktu, title]
+    parts = name.split("_", 3)
+    if len(parts) < 4:
+        # Format lama atau tidak sesuai → fallback ke versi simple
+        cleaned = name.replace("_", " ").strip()
+        return cleaned.title() if cleaned else "Untitled Video"
+
+    title_part = parts[3]  # ambil bagian title
+
+    # Ubah underscore → spasi, kapitalisasi tiap kata
+    cleaned = title_part.replace("_", " ").strip()
+    return cleaned.title() if cleaned else "Untitled Video"
+
 # ---------------- App ----------------
-app = FastAPI()
-templates = Jinja2Templates(directory="MAIN/templates")
+# app = FastAPI()
+app = FastAPI(root_path="/learnvid-ai")
+# app = FastAPI(root_path="/learnvid-ai")
+templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+from fastapi.staticfiles import StaticFiles
+
+# Static untuk asset biasa
+app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
+# app.mount("/learnvid-ai/static", StaticFiles(directory="MAIN/static"), name="static")
+
+# # Static untuk video lokal
+# video_folder_env = os.getenv("VIDEO_FOLDER", "MAIN/videos")
+# video_dir = Path(video_folder_env)
+# if not video_dir.is_absolute():
+#     video_dir = (project_root / video_dir).resolve()
+# video_dir.mkdir(parents=True, exist_ok=True)
+# # app.mount("/videos", StaticFiles(directory=str(video_dir)), name="videos")
+
+VIDEO_DIR = (BASE_DIR / "static" / "videos").resolve()
+VIDEO_DIR.mkdir(parents=True, exist_ok=True)
+
+video_dir = VIDEO_DIR  # agar kode lain tetap jalan
+
+
+from fastapi.responses import FileResponse
+from pathlib import Path
+
+# video_dir = Path("MAIN/videos").resolve()
+
+# @app.get("/videos/{filename}")
+# async def get_video(filename: str):
+#     file_path = video_dir / filename
+#     if not file_path.exists():
+#         return {"detail": "Video not found"}
+
+#     return FileResponse(path=str(file_path), media_type="video/mp4")
+
+
+
+@app.exception_handler(HTTPException)
+async def custom_http_exception_handler(request: Request, exc: HTTPException):
+    """
+    Redirect user to home (/) for 401 errors on HTML pages,
+    but keep JSON response for API endpoints.
+    """
+    # Untuk endpoint API, tetap kembalikan JSON default
+    if request.url.path.startswith("/api"):
+        return await http_exception_handler(request, exc)
+
+    # Jika unauthorized saat akses halaman biasa → redirect ke beranda
+    if exc.status_code == 401:
+        return RedirectResponse(url="/learnvid-ai/", status_code=303)
+
+    # Selain itu, gunakan handler default
+    return await http_exception_handler(request, exc)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -128,10 +211,20 @@ def current_user_required(request: Request):  # >>> changed
             raise HTTPException(status_code=401, detail="Invalid session")
         return user
 
+from fastapi.responses import FileResponse
 # ---------------- Pages ----------------
+
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
+
+@app.get("/faq", response_class=HTMLResponse)
+def faq_page(request: Request):
+    return templates.TemplateResponse("faq.html", {"request": request})
+
+@app.get("/how-it-works", response_class=HTMLResponse)
+def how_it_works_page(request: Request):
+    return templates.TemplateResponse("how-it-works.html", {"request": request})
 
 @app.get("/register", response_class=HTMLResponse)
 def register_page(request: Request):
@@ -143,9 +236,27 @@ def login_page(request: Request):
 
 @app.get("/logout")
 def logout():
-    resp = RedirectResponse(url="/", status_code=303)   # >>> changed
+    resp = RedirectResponse(url="/learnvid-ai/", status_code=303)   # >>> changed
     clear_session(resp)
     return resp
+
+@app.get("/gallery", response_class=HTMLResponse)
+def gallery_page(request: Request, user: User = Depends(current_user_required)):
+    with Session(engine) as session:
+        chat_list = session.exec(
+            select(ChatFolder)
+            .where(ChatFolder.user_id == user.id)
+            .order_by(ChatFolder.id.desc())
+        ).all()
+
+    return templates.TemplateResponse(
+        "gallery.html",
+        {
+            "request": request,
+            "username": user.username,
+            "chats": chat_list
+        }
+    )
 
 @app.get("/chat", response_class=HTMLResponse)
 def chat_page(request: Request, user: User = Depends(current_user_required)):  # >>> changed
@@ -160,28 +271,55 @@ def chat_page(request: Request, user: User = Depends(current_user_required)):  #
         {"request": request, "username": user.username, "chats": chat_list}
     )
     
+    
 @app.get("/reviews", response_class=HTMLResponse)
-def reviews_page(request: Request, user: User = Depends(current_user_required)):
-    """Tampilkan halaman review"""
+def reviews_page(request: Request):
+    return templates.TemplateResponse("reviews.html", {"request": request, "message": None})
+
+@app.get("/api/gallery/videos")
+def api_gallery_videos(user: User = Depends(current_user_required)):
     with Session(engine) as session:
-        all_reviews = session.exec(
-            select(Review).order_by(Review.created_at.desc())
+        # Ambil semua chat folder milik user
+        chat_ids = session.exec(
+            select(ChatFolder.id).where(ChatFolder.user_id == user.id)
         ).all()
-    return templates.TemplateResponse(
-        "reviews.html",
-        {"request": request, "username": user.username, "reviews": all_reviews}
-    )
+
+        # Ambil semua message yang punya video_url
+        videos = session.exec(
+            select(Message)
+            .where(Message.chat_folder_id.in_(chat_ids))
+            .where(Message.video_url.is_not(None))
+            .order_by(Message.timestamp.desc())
+        ).all()
+
+    return [
+        {
+            "id": v.id,
+            "video_url": v.video_url,
+            "content": v.content,
+            "title": _title_from_video_url(v.video_url),
+            "timestamp": v.timestamp.isoformat(),
+        }
+        for v in videos
+    ]
 
 
 @app.post("/api/reviews")
-def submit_review(data: dict, user: User = Depends(current_user_required)):
+def submit_review(data: dict):
     """Terima review dari form frontend (AJAX POST)"""
     try:
         nama = data.get("nama", "").strip()
-        nrp = data.get("nrp", "").strip()
-        kelompok = data.get("kelompok", "").strip()
+        email_raw = (data.get("email") or "").strip()
+        # Backend historically memakai field nrp & kelompok.
+        # Form baru mengirim email & instansi, jadi kita map ke kolom lama.
+        nrp = (data.get("nrp") or email_raw or "").strip()
+        kelompok = (data.get("kelompok") or data.get("instansi") or "").strip()
         rating = int(data.get("rating", 0))
         review_text = data.get("review", "").strip()
+
+        # Basic email format check
+        if not email_raw or "@" not in email_raw or "." not in email_raw.split("@")[-1]:
+            raise HTTPException(status_code=400, detail="Invalid email format")
 
         if not nama or not nrp or not kelompok or not review_text or rating < 1 or rating > 5:
             raise HTTPException(status_code=400, detail="Invalid input")
@@ -204,6 +342,9 @@ def submit_review(data: dict, user: User = Depends(current_user_required)):
                     "nama": new_review.nama,
                     "nrp": new_review.nrp,
                     "kelompok": new_review.kelompok,
+                    # Alias untuk frontend baru:
+                    "email": new_review.nrp,
+                    "instansi": new_review.kelompok,
                     "rating": new_review.rating,
                     "review": new_review.review,
                     "created_at": new_review.created_at.isoformat()
@@ -224,6 +365,9 @@ def get_all_reviews():
             "nama": r.nama,
             "nrp": r.nrp,
             "kelompok": r.kelompok,
+            # Alias agar JS di reviews.html bisa pakai email & instansi
+            "email": r.nrp,
+            "instansi": r.kelompok,
             "rating": r.rating,
             "review": r.review,
             "created_at": r.created_at.isoformat()
@@ -263,7 +407,7 @@ def register_action(
         session.refresh(user)
 
     # >>> set cookie & langsung menuju /chat (tanpa query)
-    resp = RedirectResponse(url="/chat", status_code=303)
+    resp = RedirectResponse(url="/learnvid-ai/chat", status_code=303)
     set_session(resp, user.id, user.username)
     return resp
 
@@ -295,7 +439,7 @@ def login_action(
         )
 
     # Kalau semua benar → set session & redirect
-    resp = RedirectResponse(url="/chat", status_code=303)
+    resp = RedirectResponse(url="/learnvid-ai/chat", status_code=303)
     set_session(resp, user.id, user.username)
     return resp
 
@@ -352,47 +496,41 @@ def api_get_messages(chat_id: int, user: User = Depends(current_user_required)):
         }
         for m in msgs
     ]
-    
-import subprocess, shlex, json
-from pathlib import Path
-
- 
-
 def generate_video_for_topic(topic: str) -> Optional[str]:
     """
     Jalankan langsung fungsi generate_educational_video() dari AI/app.py
     tanpa menggunakan subprocess. 
-    Mengembalikan URL video hasil upload ke Supabase.
+    Mengembalikan URL video (lokal) yang bisa diakses frontend.
     """
     try:
-        print(f"[EduGen] Generating educational video for topic: {topic}")
+        print(f"[learnvidai] Generating educational video for topic: {topic}")
 
         # Jalankan fungsi utama secara langsung
         video_path, response = generate_educational_video(topic)
 
-        # Ambil URL dari hasil upload (Supabase)
-        video_url = response.get("video_path")
-        print(f"[EduGen] Video URL: {video_url}")
+        # Ambil URL publik dari response (lokal)
+        video_url = response.get("video_url") or response.get("video_path")
+        print(f"[learnvidai] Video URL: {video_url}")
 
-        # Pastikan hasil valid
-        if video_url and "supabase.co" in video_url:
+        # Pastikan hasil valid (string non-kosong)
+        if video_url:
             return video_url
         else:
-            print("[EduGen] No Supabase URL found in response.")
+            print("[learnvidai] No video URL found in response.")
             return None
 
     except Exception as e:
-        print(f"[EduGen ERROR] {e}")
+        print(f"[learnvidai ERROR] {e}")
         return None
-    
-from langchain_google_genai import ChatGoogleGenerativeAI
-
 def chat_with_gemini(user_message: str) -> str:
     """
     Mode chat biasa menggunakan Gemini.
     """
     model = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0.7)
-    prompt = f"Kamu adalah asisten pembelajaran sains yang ramah. Jawab dengan jelas dan singkat.\n\n{user_message}"
+
+    prompt = f"""
+    Kamu adalah asisten pembelajaran sains yang ramah. Jawab dengan jelas dan singkat.\n\n{user_message}
+    """
     response = model.invoke(prompt)
     return response.content
 
@@ -442,10 +580,11 @@ from fastapi import APIRouter
 @app.post("/api/chats/{chat_id}/generate_video")
 def api_generate_video(chat_id: int, payload: dict, user: User = Depends(current_user_required)):
     """
-    Endpoint dipanggil oleh tombol "Buat Video"
-    Body JSON: {"topic": "Hukum Newton 1"}
+    Endpoint with SSE streaming for progress updates (SYNC version)
     """
     topic = (payload.get("topic") or "").strip()
+    print(f"[API DEBUG] Received topic: '{topic}'")
+    
     if not topic:
         raise HTTPException(status_code=400, detail="Topic required")
 
@@ -454,37 +593,137 @@ def api_generate_video(chat_id: int, payload: dict, user: User = Depends(current
         if not chat or chat.user_id != user.id:
             raise HTTPException(status_code=404, detail="Chat not found")
         
-        # 💬 Simpan pesan user agar masuk ke database
         user_msg = Message(chat_folder_id=chat.id, role=True, content=topic)
         session.add(user_msg)
         session.commit()
-        session.refresh(user_msg)
+        session.refresh(user_msg)  # untuk dapatkan ID pesan user
+
+    def generate_with_progress():
+        """Synchronous generator function
         
+        Menyimpan hanya SATU baris progress di tabel messages
+        untuk proses pembuatan video ini. Setiap update progress
+        akan mengubah isi baris tersebut agar yang tersimpan
+        selalu status progress terkini.
+        """
+        # ID message progress (AI) yang sedang berjalan untuk chat & request ini
+        progress_msg_id: Optional[int] = None
+
+        try:
+            initial_msg = {'status': 'started', 'message': f'🎬 Memulai pembuatan video tentang {topic}...'}
+            yield f"data: {json.dumps(initial_msg)}\n\n"
+
+            # 💾 Simpan / update progress awal ke DB (hanya 1 baris)
+            try:
+                with Session(engine) as session:
+                    if progress_msg_id is None:
+                        progress_msg = Message(
+                            chat_folder_id=chat_id,
+                            role=False,
+                            # Simpan hanya teks pesan tanpa prefix status
+                            content=initial_msg["message"],
+                        )
+                        session.add(progress_msg)
+                        session.commit()
+                        session.refresh(progress_msg)
+                        progress_msg_id = progress_msg.id
+                    else:
+                        progress_msg = session.get(Message, progress_msg_id)
+                        if progress_msg:
+                            progress_msg.content = initial_msg["message"]
+                            session.add(progress_msg)
+                            session.commit()
+            except Exception as db_err:
+                print(f"[PROGRESS DB ERROR] {db_err}")
+            
+            video_url = None
+            has_error = False
+            error_text = None
+            
+            for progress in generate_video_for_topic_with_progress(topic, message_id=user_msg.id):
+                print(f"[STREAM] Progress: {progress}")
+                yield f"data: {json.dumps(progress)}\n\n"
+
+                # 💾 Simpan setiap progress penting ke DB (update baris yang sama)
+                try:
+                    status = progress.get("status")
+                    message_text = progress.get("message") or ""
+
+                    # Simpan hanya status utama agar tidak terlalu bising
+                    if status in {"generating_content", "generating_code", "rendering", "saving", "error"} and message_text:
+                        with Session(engine) as session:
+                            if progress_msg_id is None:
+                                progress_msg = Message(
+                                    chat_folder_id=chat_id,
+                                    role=False,
+                                    # Simpan hanya teks progress tanpa prefix status
+                                    content=message_text,
+                                )
+                                session.add(progress_msg)
+                                session.commit()
+                                session.refresh(progress_msg)
+                                progress_msg_id = progress_msg.id
+                            else:
+                                progress_msg = session.get(Message, progress_msg_id)
+                                if progress_msg:
+                                    progress_msg.content = message_text
+                                    session.add(progress_msg)
+                                    session.commit()
+                except Exception as db_err:
+                    print(f"[PROGRESS DB ERROR] {db_err}")
+                
+                if progress.get('status') == 'completed':
+                    video_url = progress.get('video_url')
+                if progress.get('status') == 'error':
+                    has_error = True
+                    error_text = progress.get('message')
+            
+            if not has_error and video_url:
+                with Session(engine) as session:
+                    ai_msg = Message(
+                        chat_folder_id=chat_id,
+                        role=False,
+                        content=f"✅ Video tentang '{topic}' berhasil dibuat!",
+                        video_url=video_url
+                    )
+                    session.add(ai_msg)
+                    session.commit()
+                    session.refresh(ai_msg)
+                    
+                    yield f"data: {json.dumps({'status': 'done', 'message': ai_msg.content, 'video_url': video_url, 'message_id': ai_msg.id})}\n\n"
+            elif has_error:
+                # Simpan pesan error ke database agar tidak temporary
+                with Session(engine) as session:
+                    ai_msg = Message(
+                        chat_folder_id=chat_id,
+                        role=False,
+                        content=error_text or "❌ Maaf, terjadi kesalahan. Coba lagi nanti.",
+                        video_url=None
+                    )
+                    session.add(ai_msg)
+                    session.commit()
+                    session.refresh(ai_msg)
+
+                    yield f"data: {json.dumps({'status': 'final_error', 'message': ai_msg.content, 'message_id': ai_msg.id})}\n\n"
         
-        # Simpan placeholder message
-        ai_msg_processing = Message(chat_folder_id=chat.id, role=False, content=f"🎬 Generating video tentang '{topic}'...")
-        session.add(ai_msg_processing)
-        session.commit()
+        except Exception as e:
+            import traceback
+            print(f"[STREAM ERROR] {traceback.format_exc()}")
+            yield f"data: {json.dumps({'status': 'error', 'message': f'❌ Error: {str(e)}'})}\n\n"
 
-        # Jalankan generator video
-        video_url = generate_video_for_topic(topic)
-
-        ai_msg_done = Message(
-            chat_folder_id=chat.id,
-            role=False,
-            content=f"✅ Video tentang '{topic}' berhasil dibuat!" if video_url else "❌ Maaf, video gagal dibuat.",
-            video_url=video_url
-        )
-        session.add(ai_msg_done)
-        session.commit()
-        session.refresh(ai_msg_done)
-
-    return {
-        "ok": True,
-        "topic": topic,
-        "message": ai_msg_done.content,
-        "video_url": ai_msg_done.video_url
-    }        
+    # Gunakan StreamingResponse untuk SSE (Server-Sent Events)
+    # Tambah header anti-buffering agar reverse proxy (mis. nginx di kampus)
+    # tidak menahan output sampai selesai, sehingga progress bisa tampil live.
+    return StreamingResponse(
+        generate_with_progress(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            # Beberapa setup nginx menghormati header ini untuk mematikan buffering
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 class RenameChatIn(BaseModel):
     title: str

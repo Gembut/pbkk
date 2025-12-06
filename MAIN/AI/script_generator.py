@@ -1,12 +1,11 @@
 import os
 import re
-from dotenv import load_dotenv
-import logging
 import json
-from langchain.chains import ConversationChain
+import logging
+from dotenv import load_dotenv
+from collections import deque
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, MessagesPlaceholder
-from langchain_core.messages import SystemMessage
-from langchain.chains.conversation.memory import ConversationBufferWindowMemory
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 # Basic logging configuration
@@ -15,32 +14,68 @@ logging.getLogger('comtypes').setLevel(logging.WARNING)
 
 load_dotenv('.env')
 
+# ==========================================================
+#  Custom lightweight ConversationChain replacement
+# ==========================================================
+class ConversationChainLite:
+    def __init__(self, llm, prompt=None, memory=None, input_key="human_input", verbose=False):
+        self.llm = llm
+        self.prompt = prompt
+        self.verbose = verbose
+        self.input_key = input_key
+        self.memory = memory or deque(maxlen=5)
+
+    def predict(self, **kwargs):
+        human_input = kwargs.get(self.input_key, "")
+        chat_history = list(self.memory)
+
+        # Build message list
+        messages = []
+        if self.prompt:
+            # If ChatPromptTemplate is used, fill it
+            messages = self.prompt.format_messages(human_input=human_input, chat_history=chat_history)
+        else:
+            # Fallback: simple message flow
+            messages = chat_history + [HumanMessage(content=human_input)]
+
+        if self.verbose:
+            print("🧩 Prompt Messages:", [m.content for m in messages])
+
+        response = self.llm.invoke(messages)
+        text = getattr(response, "content", None) or getattr(response, "text", "")
+        self.memory.append(AIMessage(content=text))
+        return text
+
+# ==========================================================
+#  Main ScienceVideoGenerator class (adapted for LangChain 1.x)
+# ==========================================================
 class ScienceVideoGenerator:
     def __init__(self, google_api_key):
         self.google_api_key = google_api_key
-        self.memory = ConversationBufferWindowMemory(k=5, memory_key="chat_history", return_messages=True)
+        self.memory = deque(maxlen=5)
+
         self.google_chat = ChatGoogleGenerativeAI(
-            model="gemini-2.0-flash",
+            # model="gemini-2.5-pro",
+            model="gemini-2.5-flash-lite",
             google_api_key=self.google_api_key,
-            temperature=0.7,
-            max_tokens=None,
+            temperature=0.5,
+            max_output_tokens=None,
             timeout=None,
             max_retries=2
         )
-        
-        # Enhanced Stage 1 prompt with detailed step-by-step instructions
+
+        # Prompts
         self.stage1_prompt = self._create_enhanced_stage1_prompt()
         self.stage2_prompt = self._create_stage2_prompt()
-        
-        # Stage 1 conversation chain
-        self.stage1_conversation = ConversationChain(
+
+        # Stage 1 conversation
+        self.stage1_conversation = ConversationChainLite(
             llm=self.google_chat,
             prompt=self.stage1_prompt,
             verbose=True,
             memory=self.memory,
-            input_key="human_input",
+            input_key="human_input"
         )
-
     def generate_educational_breakdown(self, topic):
         """
         Enhanced Stage 1: Generate a comprehensive educational breakdown with detailed step-by-step analysis.
@@ -139,7 +174,7 @@ Please execute the following 6-step educational breakdown process:
 - Use analogies and metaphors when helpful
 - Include transition phrases between steps
 - Keep language appropriate for target audience
-- Aim for 50-100 words per step
+- Aim for 25-50 words per step
 
 🧪 STEP 6: ASSESSMENT & ENGAGEMENT PLANNING
 - Design 2-3 quiz questions of varying difficulty
@@ -183,7 +218,7 @@ Provide your complete analysis as a properly formatted JSON object following thi
                 "highlighting": ["elements to emphasize"]
             },
             "animation_plan": "Detailed step-by-step description of how this should be visualized in Manim (200+ words)",
-            "duration_seconds": 45,
+            "duration_seconds": 25, #/
             "difficulty_level": "beginner|intermediate|advanced",
             "transition_to_next": "How this step logically connects to the next step"
         }
@@ -204,7 +239,7 @@ Provide your complete analysis as a properly formatted JSON object following thi
     },
     "metadata": {
         "target_audience": "Specific age range and education level",
-        "estimated_total_duration": 240,
+        "estimated_total_duration": 180, #/
         "real_world_applications": ["Application 1", "Application 2", "Application 3"],
         "related_topics": ["Connected concept 1", "Connected concept 2"],
         "difficulty_progression": "How complexity increases through steps"
@@ -404,7 +439,7 @@ Begin your comprehensive 6-step analysis now:
             },
             "metadata": {
                 "target_audience": "High school to undergraduate level",
-                "estimated_total_duration": 180,
+                "estimated_total_duration": 150, #/
                 "real_world_applications": self._generate_applications(topic),
                 "related_topics": self._generate_related_topics(topic),
                 "difficulty_progression": "Begins with basic concepts and gradually introduces more complex applications"
@@ -441,7 +476,7 @@ Begin your comprehensive 6-step analysis now:
                     "highlighting": ["main_concept"]
                 },
                 "animation_plan": f"Begin with an engaging title animation for '{topic}'. Use smooth text reveals to introduce the concept. Create visual interest with color transitions and gentle object movements. Display key terminology clearly with appropriate emphasis.",
-                "duration_seconds": 40,
+                "duration_seconds": 20, #/
                 "difficulty_level": "beginner",
                 "transition_to_next": "Now that we understand what {topic} is, let's explore the underlying principles"
             },
@@ -463,7 +498,7 @@ Begin your comprehensive 6-step analysis now:
                     "highlighting": ["critical_connections"]
                 },
                 "animation_plan": f"Create detailed diagrams showing the core principles of {topic}. Use animated arrows and connections to show relationships. Highlight key components as they're discussed. Use color coding to distinguish different aspects.",
-                "duration_seconds": 60,
+                "duration_seconds": 35, #/
                 "difficulty_level": "intermediate",
                 "transition_to_next": "With these principles in mind, let's see how they manifest in practice"
             },
@@ -485,7 +520,7 @@ Begin your comprehensive 6-step analysis now:
                     "highlighting": ["key_applications"]
                 },
                 "animation_plan": f"Present engaging real-world examples of {topic}. Use animations to show the concept in action. Create visual scenarios that students can relate to. Use dynamic movements to maintain engagement.",
-                "duration_seconds": 50,
+                "duration_seconds": 30, #/
                 "difficulty_level": "intermediate",
                 "transition_to_next": "Let's summarize what we've learned and test our understanding"
             },
@@ -507,7 +542,7 @@ Begin your comprehensive 6-step analysis now:
                     "highlighting": ["essential_concepts"]
                 },
                 "animation_plan": f"Create a comprehensive summary visualization that ties together all the main concepts of {topic}. Use clear, organized layouts to reinforce learning. End with memorable key takeaways.",
-                "duration_seconds": 30,
+                "duration_seconds": 20, #/
                 "difficulty_level": "beginner",
                 "transition_to_next": "You now have a solid foundation in {topic}!"
             }
