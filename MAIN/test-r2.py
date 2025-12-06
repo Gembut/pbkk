@@ -6,6 +6,8 @@ import boto3, os
 print("KEY:", os.getenv("R2_ACCESS_KEY_ID"))
 print("SECRET:", os.getenv("R2_SECRET_ACCESS_KEY"))
 print("ENDPOINT:", os.getenv("R2_ENDPOINT"))
+print("R2_BUCKET_PUBLIC_URL:", os.getenv("R2_BUCKET_PUBLIC_URL"))
+
 
 s3 = boto3.client(
     "s3",
