@@ -1,0 +1,2398 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LearnVid AI - Gallery</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn-uicons.flaticon.com/3.0.0/uicons-regular-rounded/css/uicons-regular-rounded.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    />
+    <link rel="icon" type="image/svg+xml" href="/learnvid-ai/static/logo.svg" />
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap");
+
+      @font-face {
+        font-family: "Cabinet Grotesk";
+        src: url("{{ url_for('static', path='font/CabinetGrotesk-Regular.woff2') }}")
+            format("woff2"),
+          url("{{ url_for('static', path='font/CabinetGrotesk-Regular.woff') }}")
+            format("woff");
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      :root {
+        --font-display: "Cabinet Grotesk", sans-serif;
+        --font-body: "Montserrat", sans-serif;
+      }
+
+      @import url("https://fonts.googleapis.com/css2?family=Costaline:wght@400&display=swap");
+
+      /* Reset */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: var(--font-body);
+        background: #f9f7f7;
+        color: #112d4e;
+        min-height: 100vh;
+        overflow-x: hidden;
+        overflow-y: auto;
+      }
+
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6 {
+        font-family: var(--font-display);
+      }
+
+      .container {
+        display: flex;
+        min-height: 100vh;
+      }
+
+      /* Sidebar */
+      .sidebar {
+        width: 260px;
+        background: #112d4e;
+        color: #f9f7f7;
+        display: flex;
+        flex-direction: column;
+        border-right: 1px solid rgba(219, 226, 239, 0.1);
+        transition: transform 0.3s ease;
+      }
+
+      /* Mobile Sidebar Toggle */
+      .mobile-sidebar-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 998;
+        backdrop-filter: blur(2px);
+      }
+
+      .mobile-sidebar-toggle {
+        display: none;
+        position: fixed;
+        top: 15px;
+        left: 15px;
+        z-index: 1001;
+        background: #112d4e;
+        color: #f9f7f7;
+        border: none;
+        padding: 10px;
+        border-radius: 8px;
+        cursor: pointer;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+      }
+
+      .mobile-sidebar-toggle svg {
+        width: 24px;
+        height: 24px;
+        stroke: #f9f7f7;
+      }
+
+      /* --- PERUBAHAN SIDEBAR HEADER --- */
+      .sidebar-header {
+        padding: 20px 16px;
+        border-bottom: 1px solid rgba(219, 226, 239, 0.1);
+      }
+      .sidebar-logo {
+        font-size: 1.25rem; /* Ukuran "LearnVid AI" */
+        font-weight: 500;
+        color: #f9f7f7;
+        padding-left: 5px;
+      }
+      /* ------------------------------- */
+
+      .sidebar-menu {
+        padding: 8px 12px;
+        flex: 1;
+        overflow-y: auto;
+      }
+
+      .menu-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px; /* Dibuat sedikit lebih besar */
+        margin-bottom: 4px; /* Jarak antar menu */
+        color: #dbe2ef;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 14px;
+        text-decoration: none; /* Ditambahkan untuk link */
+      }
+      .menu-item:hover {
+        background: rgba(219, 226, 239, 0.1);
+        color: #f9f7f7;
+      }
+      .menu-item.active {
+        /* Style untuk link aktif */
+        background: #3f72af;
+        color: #f9f7f7;
+      }
+      .menu-item svg {
+        width: 18px;
+        height: 18px;
+      } /* Icon sedikit lebih besar */
+      .menu-item i {
+        font-size: 18px;
+      }
+
+      .chats-section {
+        margin-top: 15px;
+      } /* Didekatkan */
+      .chats-title {
+        color: #dbe2ef;
+        font-size: 11px;
+        opacity: 0.7;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+        padding: 0 12px;
+      }
+
+      .chat-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 12px;
+        margin-bottom: 2px;
+        position: relative;
+        color: #dbe2ef;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 14px;
+        line-height: 1.4;
+      }
+      .chat-item:hover {
+        background: rgba(219, 226, 239, 0.1);
+      }
+      .chat-item.active {
+        background: #3f72af;
+        color: #f9f7f7;
+      }
+
+      .chat-title {
+        flex: 1;
+        margin-right: 8px;
+        max-width: 180px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: inline-block;
+        vertical-align: middle;
+      }
+
+      /* ... Style .chat-menu, .sidebar-footer, .user-info, dll tetap sama ... */
+      .chat-menu {
+        position: relative;
+      }
+      .chat-menu-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 16px;
+        color: #666;
+        display: inline-flex;
+        align-items: center;
+        padding: 4px;
+      }
+      .chat-menu-btn i {
+        font-size: 18px;
+        color: #fff;
+      }
+      .chat-menu-dropdown {
+        display: none;
+        position: absolute;
+        right: 0;
+        top: 100%;
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        padding: 4px 0;
+        min-width: 120px;
+        z-index: 10;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+      .chat-menu.open .chat-menu-dropdown {
+        display: block;
+      }
+      .chat-menu-dropdown button {
+        display: block;
+        width: 100%;
+        padding: 8px 12px;
+        background: none;
+        border: none;
+        text-align: left;
+        cursor: pointer;
+        font-size: 14px;
+        color: #112d4e;
+      }
+      .chat-menu-dropdown button:hover {
+        background: #f3f3f3;
+      }
+      .sidebar-footer {
+        padding: 12px;
+        border-top: 1px solid rgba(219, 226, 239, 0.1);
+      }
+      .user-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: 0.2s;
+      }
+      .user-info:hover {
+        background: rgba(219, 226, 239, 0.1);
+      }
+      .user-avatar {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: #3f72af;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: bold;
+      }
+      .username {
+        color: #dbe2ef;
+        font-size: 14px;
+      }
+      /* ------------------------------------------------------------------ */
+
+      /* Main Area */
+      .chat-main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        background: #f9f7f7; /* Latar belakang main content */
+      }
+
+      /* Floating Review Button (dari chat.html) */
+      .floating-review-btn {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #3f72af 0%, #2d5a94 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: move;
+        z-index: 9999;
+        box-shadow: 0 4px 20px rgba(63, 114, 175, 0.4);
+        transition: all 0.3s ease;
+        border: 3px solid #f9f7f7;
+        text-decoration: none;
+      }
+      .floating-review-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 30px rgba(63, 114, 175, 0.6);
+      }
+      .floating-review-btn:active {
+        cursor: grabbing;
+      }
+      .floating-review-btn svg {
+        width: 28px;
+        height: 28px;
+        color: #f9f7f7;
+      }
+      @keyframes bounce {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-10px);
+        }
+      }
+      .floating-review-btn.bounce {
+        animation: bounce 2s infinite;
+      }
+
+      /* Modal (dari chat.html, diperlukan untuk sidebar) */
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.45);
+        display: none; /* Diubah dari flex */
+        justify-content: center;
+        align-items: center;
+        z-index: 999;
+        backdrop-filter: blur(2px);
+        animation: fadeIn 0.25s ease;
+      }
+      .modal {
+        background: #f9f7f7;
+        color: #112d4e;
+        border-radius: 10px;
+        padding: 24px;
+        width: 90%;
+        max-width: 300px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+        animation: slideUp 0.3s ease;
+      }
+      .modal h2 {
+        margin-top: 0;
+        font-size: 1.2rem;
+        font-weight: bold;
+      }
+      .modal-input {
+        width: 100%;
+        margin-top: 10px;
+        padding: 10px 12px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        outline: none;
+        font-size: 15px;
+      }
+      .modal-input:focus {
+        border-color: #3f72af;
+        box-shadow: 0 0 0 2px rgba(63, 114, 175, 0.2);
+      }
+      .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 18px;
+        gap: 10px;
+      }
+      .modal-btn {
+        padding: 7px 14px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+      }
+      .modal-btn.cancel {
+        background: #ddd;
+        color: #333;
+      }
+      .modal-btn.ok {
+        background: #3f72af;
+        color: white;
+      }
+      .modal-btn.ok:hover {
+        background: #2b5691;
+      }
+      .modal-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+      }
+      .modal-message {
+        margin: 8px 0 16px 0;
+        font-size: 0.95rem;
+        color: #2b3a55;
+        text-align: left;
+      }
+      .modal-icon {
+        width: 20px;
+        height: 20px;
+      }
+      .chat-delete {
+        color: #d11a2a;
+        font-weight: 600;
+      }
+      .chat-delete:hover {
+        background: #ffe5e5 !important;
+        color: #a00;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      @keyframes slideUp {
+        from {
+          transform: translateY(15px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      /* ==============================================
+    KODE BARU: STYLE UNTUK GALLERY
+  ==============================================
+  */
+
+      .gallery-container {
+        flex: 1;
+        overflow-y: auto;
+        padding: 30px;
+        /* Background dari Figma (biru sangat muda) */
+        background: #ebf1f8;
+        color: #112d4e;
+      }
+
+      .gallery-title {
+        font-size: 2.5rem;
+        font-weight: 500;
+        margin-bottom: 30px;
+        text-align: center;
+        color: #112d4e;
+      }
+
+      .gallery-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 20px;
+        align-items: start;
+        width: 100%;
+      }
+
+      /* Enhanced Video Card Styles */
+      .video-card {
+        cursor: pointer;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        text-decoration: none;
+        color: #112d4e;
+        border-radius: 12px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .video-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 12px 30px rgba(17, 45, 78, 0.15);
+      }
+
+      .video-thumbnail {
+        position: relative;
+        background: #222;
+        border-radius: 12px;
+        padding-top: 56.25%;
+        overflow: hidden;
+        border: 3px solid transparent;
+        transition: border-color 0.3s ease;
+      }
+
+      .video-thumbnail video {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: 0.6;
+        border-radius: 12px;
+        transition: opacity 0.3s ease;
+      }
+
+      .video-card:hover .video-thumbnail video {
+        opacity: 0.8;
+      }
+
+      .video-card:hover .video-thumbnail {
+        border-color: #3f72af;
+      }
+      .video-card:hover .video-actions {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      /* Video Info Overlay */
+      .video-info {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        pointer-events: none;
+        z-index: 2;
+      }
+
+      .video-card:hover .video-info {
+        transform: translateY(0);
+      }
+
+      .video-title {
+        color: #f9f7f7;
+        font-size: 0.95rem;
+        font-weight: 500;
+        line-height: 1.4;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        pointer-events: none;
+        background: linear-gradient(
+          to bottom,
+          rgba(17, 45, 78, 0.9) 0%,
+          rgba(17, 45, 78, 0.7) 70%,
+          transparent 100%
+        );
+        padding: 12px;
+        margin: -15px -15px 0 -15px; /* Negative margin to stretch to edges */
+        border-radius: 12px 12px 0 0;
+      }
+
+      /* Action Buttons */
+      .video-actions {
+        position: absolute;
+        bottom: 15px;
+        left: 15px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        opacity: 0;
+        transform: translateY(10px);
+        transition: all 0.3s ease;
+        pointer-events: auto;
+        z-index: 3;
+      }
+
+      .video-action-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: #f9f7f7;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      }
+
+      .video-action-btn:hover {
+        transform: scale(1.1);
+        background: #3f72af;
+      }
+
+      .video-action-btn:hover svg {
+        stroke: #f9f7f7;
+      }
+
+      .video-action-btn svg {
+        width: 18px;
+        height: 18px;
+        stroke: #112d4e;
+        transition: stroke 0.3s ease;
+      }
+
+      .video-action-btn.fullscreen-btn svg {
+        fill: none;
+        stroke-width: 2;
+      }
+
+      .video-action-btn.download-btn svg {
+        fill: none;
+        stroke-width: 2;
+      }
+
+      /* Always show actions on touch devices */
+      @media (hover: none) {
+        .video-actions {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* Fullscreen Modal */
+      .fullscreen-modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.95);
+        z-index: 9999;
+        animation: fadeIn 0.3s ease;
+      }
+
+      .fullscreen-modal.active {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .fullscreen-content {
+        position: relative;
+        width: 90%;
+        max-width: 1200px;
+        height: 80vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .fullscreen-video-container {
+        flex: 1;
+        position: relative;
+        background: #000;
+        border-radius: 12px;
+        overflow: hidden;
+      }
+
+      .fullscreen-video-container video {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+
+      .fullscreen-controls {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 20px;
+        padding: 0 20px;
+      }
+
+      .fullscreen-title {
+        color: #f9f7f7;
+        font-size: 1.5rem;
+        font-weight: 500;
+      }
+
+      .carousel-controls {
+        display: flex;
+        gap: 15px;
+      }
+
+      .carousel-btn {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: #3f72af;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .carousel-btn:hover {
+        background: #2d5a94;
+        transform: scale(1.1);
+      }
+
+      .carousel-btn svg {
+        width: 24px;
+        height: 24px;
+        stroke: #f9f7f7;
+        fill: none;
+        stroke-width: 2;
+      }
+
+      .close-fullscreen-btn {
+        position: absolute;
+        top: -50px;
+        right: 0;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #f9f7f7;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        z-index: 2;
+      }
+
+      .close-fullscreen-btn:hover {
+        background: #3f72af;
+        transform: rotate(90deg);
+      }
+
+      .close-fullscreen-btn svg {
+        width: 20px;
+        height: 20px;
+        stroke: #112d4e;
+      }
+
+      .close-fullscreen-btn:hover svg {
+        stroke: #f9f7f7;
+      }
+
+      @media (hover: none) {
+        .close-fullscreen-btn {
+          top: 12px;
+          right: 12px;
+        }
+      }
+
+      /* Responsive adjustments */
+      @media (max-width: 1024px) {
+        .gallery-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 18px;
+        }
+
+        .gallery-title {
+          font-size: 2.2rem;
+        }
+      }
+
+      @media (max-width: 768px) {
+        /* Mobile sidebar */
+        .sidebar {
+          position: fixed;
+          left: 0;
+          top: 0;
+          height: 100vh;
+          z-index: 999;
+          transform: translateX(-100%);
+          width: 280px;
+        }
+
+        .sidebar.open {
+          transform: translateX(0);
+        }
+
+        .sidebar.open .sidebar-logo {
+          pointer-events: none;
+          padding-left: 60px;
+        }
+
+        .mobile-sidebar-overlay {
+          display: none;
+        }
+
+        .mobile-sidebar-overlay.active {
+          display: block;
+        }
+
+        .mobile-sidebar-toggle {
+          display: block;
+        }
+
+        .chat-main {
+          width: 100%;
+        }
+
+        .gallery-container {
+          padding: 20px 15px;
+        }
+
+        .gallery-title {
+          font-size: 2rem;
+          margin-bottom: 25px;
+        }
+
+        .gallery-grid {
+          grid-template-columns: 1fr;
+          gap: 15px;
+        }
+
+        .video-title {
+          font-size: 0.85rem;
+          padding: 10px;
+        }
+
+        .video-actions {
+          bottom: 10px;
+          left: 10px;
+          gap: 8px;
+        }
+
+        .video-action-btn {
+          width: 32px;
+          height: 32px;
+        }
+
+        .video-action-btn svg {
+          width: 16px;
+          height: 16px;
+        }
+
+        .fullscreen-content {
+          width: 95%;
+          height: 85vh;
+        }
+
+        .fullscreen-title {
+          font-size: 1.2rem;
+        }
+
+        .carousel-btn {
+          width: 42px;
+          height: 42px;
+        }
+
+        .carousel-btn svg {
+          width: 20px;
+          height: 20px;
+        }
+
+        .floating-review-btn {
+          width: 50px;
+          height: 50px;
+          bottom: 20px;
+          right: 20px;
+        }
+
+        .floating-review-btn svg {
+          width: 24px;
+          height: 24px;
+        }
+      }
+
+      @media (max-width: 600px) {
+        .sidebar {
+          width: 260px;
+        }
+
+        .gallery-container {
+          padding: 18px 12px;
+        }
+
+        .gallery-title {
+          font-size: 1.8rem;
+          margin-bottom: 20px;
+        }
+
+        .gallery-grid {
+          grid-template-columns: 1fr;
+          gap: 15px;
+        }
+
+        .video-title {
+          font-size: 0.9rem;
+          -webkit-line-clamp: 2;
+        }
+
+        .video-actions {
+          bottom: 12px;
+          left: 12px;
+        }
+
+        .fullscreen-controls {
+          flex-direction: column;
+          align-items: center;
+          gap: 15px;
+          padding: 0 15px;
+        }
+
+        .fullscreen-title {
+          font-size: 1.1rem;
+          text-align: center;
+        }
+
+        .close-fullscreen-btn {
+          top: 12px;
+          right: 12px;
+          width: 36px;
+          height: 36px;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .sidebar {
+          width: 240px;
+        }
+
+        .mobile-sidebar-toggle {
+          top: 12px;
+          left: 12px;
+          padding: 8px;
+        }
+
+        .mobile-sidebar-toggle svg {
+          width: 20px;
+          height: 20px;
+        }
+
+        .gallery-container {
+          padding: 15px 10px;
+        }
+
+        .gallery-title {
+          font-size: 1.5rem;
+          margin-bottom: 18px;
+        }
+
+        .gallery-grid {
+          gap: 12px;
+        }
+
+        .video-title {
+          font-size: 0.8rem;
+          padding: 8px;
+        }
+
+        .video-actions {
+          bottom: 8px;
+          left: 8px;
+          gap: 6px;
+        }
+
+        .video-action-btn {
+          width: 30px;
+          height: 30px;
+        }
+
+        .video-action-btn svg {
+          width: 14px;
+          height: 14px;
+        }
+
+        .fullscreen-content {
+          width: 98%;
+          height: 90vh;
+        }
+
+        .fullscreen-title {
+          font-size: 1rem;
+        }
+
+        .carousel-controls {
+          gap: 10px;
+        }
+
+        .carousel-btn {
+          width: 38px;
+          height: 38px;
+        }
+
+        .carousel-btn svg {
+          width: 18px;
+          height: 18px;
+        }
+
+        .floating-review-btn {
+          width: 45px;
+          height: 45px;
+          bottom: 15px;
+          right: 15px;
+        }
+
+        .floating-review-btn svg {
+          width: 20px;
+          height: 20px;
+        }
+
+        .menu-item {
+          font-size: 13px;
+          padding: 9px 10px;
+        }
+
+        .menu-item svg {
+          width: 16px;
+          height: 16px;
+        }
+
+        .chat-item {
+          font-size: 13px;
+          padding: 7px 10px;
+        }
+
+        .username {
+          font-size: 13px;
+        }
+      }
+
+      /* Very small screens */
+      @media (max-width: 360px) {
+        .sidebar {
+          width: 220px;
+        }
+
+        .gallery-title {
+          font-size: 1.3rem;
+        }
+
+        .video-title {
+          font-size: 0.75rem;
+        }
+      }
+
+      /* Landscape mobile */
+      @media (max-height: 600px) and (orientation: landscape) {
+        .gallery-container {
+          padding: 15px;
+        }
+
+        .gallery-title {
+          font-size: 1.5rem;
+          margin-bottom: 15px;
+        }
+
+        .fullscreen-content {
+          height: 95vh;
+        }
+
+        .fullscreen-controls {
+          margin-top: 10px;
+        }
+      }
+
+      /* Search Container */
+      .search-container {
+        max-width: 600px;
+        margin: 0 auto 30px auto;
+      }
+
+      .search-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+      }
+
+      .search-icon {
+        position: absolute;
+        left: 15px;
+        width: 20px;
+        height: 20px;
+        stroke: #112d4e;
+        opacity: 0.5;
+        pointer-events: none;
+      }
+
+      .search-input {
+        width: 100%;
+        padding: 12px 45px 12px 45px;
+        border: 2px solid #dbe2ef;
+        border-radius: 25px;
+        font-size: 15px;
+        font-family: var(--font-body);
+        color: #112d4e;
+        background: #fff;
+        transition: all 0.3s ease;
+        outline: none;
+      }
+
+      .search-input:focus {
+        border-color: #3f72af;
+        box-shadow: 0 0 0 3px rgba(63, 114, 175, 0.1);
+      }
+
+      .search-input::placeholder {
+        color: #112d4e;
+        opacity: 0.5;
+      }
+
+      .clear-search-btn {
+        position: absolute;
+        right: 12px;
+        width: 28px;
+        height: 28px;
+        border: none;
+        background: #dbe2ef;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .clear-search-btn:hover {
+        background: #3f72af;
+      }
+
+      .clear-search-btn:hover svg {
+        stroke: #f9f7f7;
+      }
+
+      .clear-search-btn svg {
+        width: 14px;
+        height: 14px;
+        stroke: #112d4e;
+        transition: stroke 0.3s ease;
+      }
+
+      /* Pagination Container */
+      .pagination-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 15px;
+        margin-top: 40px;
+        padding: 20px;
+        flex-wrap: wrap;
+      }
+
+      .pagination-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        border: 2px solid #dbe2ef;
+        border-radius: 8px;
+        background: #fff;
+        color: #112d4e;
+        font-family: var(--font-body);
+        font-size: 15px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .pagination-btn:hover:not(:disabled) {
+        background: #3f72af;
+        border-color: #3f72af;
+        color: #f9f7f7;
+        transform: translateY(-2px);
+      }
+
+      .pagination-btn:hover:not(:disabled) svg {
+        stroke: #f9f7f7;
+      }
+
+      .pagination-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+
+      .pagination-btn svg {
+        width: 18px;
+        height: 18px;
+        stroke: #112d4e;
+        transition: stroke 0.3s ease;
+      }
+
+      .pagination-numbers {
+        display: flex;
+        gap: 8px;
+      }
+
+      .page-number {
+        min-width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid #dbe2ef;
+        border-radius: 8px;
+        background: #fff;
+        color: #112d4e;
+        font-family: var(--font-body);
+        font-size: 15px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .page-number:hover {
+        background: #dbe2ef;
+        transform: translateY(-2px);
+      }
+
+      .page-number.active {
+        background: #3f72af;
+        border-color: #3f72af;
+        color: #f9f7f7;
+      }
+
+      .page-number.ellipsis {
+        border: none;
+        background: transparent;
+        cursor: default;
+        pointer-events: none;
+      }
+
+      /* Empty State */
+      .empty-state {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 60px 20px;
+        color: #112d4e;
+        opacity: 0.7;
+      }
+
+      .empty-state svg {
+        width: 80px;
+        height: 80px;
+        margin-bottom: 20px;
+        opacity: 0.3;
+      }
+
+      .empty-state h3 {
+        font-size: 1.5rem;
+        margin-bottom: 10px;
+        font-weight: 500;
+      }
+
+      .empty-state p {
+        font-size: 1rem;
+        opacity: 0.8;
+      }
+
+      /* Responsive Pagination */
+      @media (max-width: 768px) {
+        .search-container {
+          padding: 0 15px;
+          margin-bottom: 25px;
+        }
+
+        .search-input {
+          font-size: 14px;
+          padding: 10px 40px 10px 40px;
+        }
+
+        .search-icon {
+          width: 18px;
+          height: 18px;
+          left: 12px;
+        }
+
+        .pagination-container {
+          gap: 10px;
+          padding: 15px;
+          margin-top: 30px;
+          justify-content: center;
+        }
+
+        .pagination-btn {
+          padding: 8px 15px;
+          font-size: 14px;
+        }
+
+        .pagination-btn svg {
+          width: 16px;
+          height: 16px;
+        }
+
+        .page-number {
+          min-width: 36px;
+          height: 36px;
+          font-size: 14px;
+        }
+
+        .pagination-numbers {
+          gap: 6px;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .pagination-btn span {
+          display: none;
+        }
+
+        .pagination-btn {
+          padding: 8px 12px;
+        }
+
+        .page-number {
+          min-width: 32px;
+          height: 32px;
+          font-size: 13px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <button
+        class="mobile-sidebar-toggle"
+        id="mobileSidebarToggle"
+        aria-label="Toggle sidebar"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path d="M3 12h18M3 6h18M3 18h18" />
+        </svg>
+      </button>
+
+      <div class="mobile-sidebar-overlay" id="mobileSidebarOverlay"></div>
+
+      <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <div class="sidebar-logo">LearnVid AI</div>
+        </div>
+
+        <div class="sidebar-menu">
+          <a href="/learnvid-ai/chat" class="menu-item">
+            <i class="bi bi-plus-circle"></i>
+            New Chat
+          </a>
+          <a href="/learnvid-ai/gallery" class="menu-item active">
+            <i class="bi bi-bookmark"></i>
+            Gallery
+          </a>
+
+          <div class="chats-section" id="chats-section">
+            <div class="chats-title">Chats</div>
+            {% if chats and chats|length > 0 %} {% for c in chats %}
+            <div class="chat-item" data-chat-id="{{ c.id }}">
+              <span class="chat-title">{{ c.title }}</span>
+              <div class="chat-menu">
+                <button class="chat-menu-btn" title="Options">
+                  <i class="bi bi-three-dots"></i>
+                </button>
+                <div class="chat-menu-dropdown">
+                  <button class="chat-rename">Rename</button>
+                  <button class="chat-delete">Delete</button>
+                </div>
+              </div>
+            </div>
+            {% endfor %} {% else %}
+            <div id="empty-state" class="chat-item empty">No chats yet</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="sidebar-footer">
+          <div class="user-info">
+            <div class="user-avatar">U</div>
+            <div class="username">{{username}}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-main">
+        <div class="gallery-container">
+          <h1 class="gallery-title">Gallery</h1>
+          <!-- Search Bar -->
+          <div class="search-container">
+            <div class="search-wrapper">
+              <svg
+                class="search-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.35-4.35" />
+              </svg>
+              <input
+                type="text"
+                id="search-input"
+                class="search-input"
+                placeholder="Search videos..."
+              />
+              <button
+                id="clear-search"
+                class="clear-search-btn"
+                style="display: none"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- <div class="gallery-grid" id="gallery-grid"></div> -->
+          <div class="gallery-grid" id="gallery-grid">
+            {% for i in range(12) %}
+            <a
+              href="/video/{{ i }}"
+              class="video-card {% if i == 3 %}active{% endif %}"
+            >
+              <div class="video-thumbnail">
+                <svg class="play-icon" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              </div>
+            </a>
+            {% endfor %}
+          </div>
+          <!-- Pagination Controls -->
+          <div class="pagination-container" id="pagination-container">
+            <button class="pagination-btn prev-page-btn" id="prev-page-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+              Prev
+            </button>
+
+            <div class="pagination-numbers" id="pagination-numbers"></div>
+
+            <button class="pagination-btn next-page-btn" id="next-page-btn">
+              Next
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="modal-overlay" class="modal-overlay">
+      <div class="modal">
+        <div class="modal-header">
+          <img id="modal-icon" class="modal-icon" alt="" />
+          <h2 id="modal-title">Modal Title</h2>
+        </div>
+        <p id="modal-message" class="modal-message"></p>
+        <input
+          type="text"
+          id="modal-input"
+          class="modal-input"
+          style="display: none"
+        />
+        <div class="modal-actions">
+          <button id="modal-cancel" class="modal-btn cancel">Cancel</button>
+          <button id="modal-ok" class="modal-btn ok">OK</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ====== User context dari Jinja ======
+      const CURRENT_USERNAME = "{{ username }}";
+
+      // ====== Elemen DOM (Sidebar) ======
+      const chatsSection = document.querySelector(".chats-section");
+      const sidebar = document.getElementById("sidebar");
+      const mobileSidebarToggle = document.getElementById(
+        "mobileSidebarToggle"
+      );
+      const mobileSidebarOverlay = document.getElementById(
+        "mobileSidebarOverlay"
+      );
+
+      // ====== State ======
+      let activeChatId = null; // Tidak ada chat yang aktif di halaman gallery
+
+      // ====== Mobile Sidebar Toggle ======
+      if (mobileSidebarToggle) {
+        mobileSidebarToggle.addEventListener("click", function () {
+          sidebar.classList.toggle("open");
+          mobileSidebarOverlay.classList.toggle("active");
+        });
+      }
+
+      if (mobileSidebarOverlay) {
+        mobileSidebarOverlay.addEventListener("click", function () {
+          sidebar.classList.remove("open");
+          mobileSidebarOverlay.classList.remove("active");
+        });
+      }
+
+      // Close sidebar when clicking a chat item on mobile
+      function closeMobileSidebar() {
+        if (window.innerWidth <= 768) {
+          sidebar.classList.remove("open");
+          mobileSidebarOverlay.classList.remove("active");
+        }
+      }
+
+      function escapeHtml(str = "") {
+        return str.replace(
+          /[&<>"']/g,
+          (s) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            }[s])
+        );
+      }
+
+      // ====== Event handlers (Sidebar) ======
+
+      // Delegasi klik chat-item (arahkan ke halaman chat)
+      if (chatsSection) {
+        chatsSection.addEventListener("click", async function (e) {
+          // Cek apakah klik pada chat item, bukan pada tombol menu
+          const target = e.target.closest(".chat-item");
+          if (
+            !target ||
+            target.classList.contains("empty") ||
+            e.target.closest(".chat-menu-btn")
+          ) {
+            return;
+          }
+
+          const chatId = target.dataset.chatId;
+          if (!chatId) return;
+
+          // Arahkan ke halaman chat dengan ID chat yang spesifik
+          window.location.href = `/learnvid-ai/chat?id=${chatId}`;
+        });
+      }
+
+      // Chat menu: toggle, rename, delete (Fungsionalitas sidebar)
+      function closeAllChatMenus(except) {
+        document.querySelectorAll(".chat-menu").forEach((m) => {
+          if (m !== except) m.classList.remove("open");
+        });
+      }
+
+      chatsSection.addEventListener("click", (e) => {
+        const btn = e.target.closest(".chat-menu-btn");
+        if (!btn) return;
+        e.stopPropagation();
+        const menu = btn.closest(".chat-menu");
+        const isOpen = menu.classList.contains("open");
+        closeAllChatMenus(menu);
+        if (!isOpen) menu.classList.add("open");
+      });
+
+      document.addEventListener("click", () => closeAllChatMenus(null));
+
+      // Handler RENAME
+      chatsSection.addEventListener("click", async (e) => {
+        const btn = e.target.closest(".chat-rename");
+        if (!btn) return;
+
+        e.stopPropagation();
+        const item = btn.closest(".chat-item");
+        const chatId = item?.dataset?.chatId;
+        if (!chatId) return;
+
+        const titleSpan = item.querySelector(".chat-title");
+        const currentTitle = titleSpan?.textContent?.trim() || "Untitled";
+
+        const newTitle = await openModal({
+          title: "✏️ Rename Chat",
+          placeholder: "Enter new title...",
+          defaultValue: currentTitle,
+        });
+        if (newTitle === null) return;
+        const cleaned = (newTitle || "").trim();
+        if (!cleaned || cleaned === currentTitle) return;
+
+        try {
+          const res = await fetch(`/learnvid-ai/api/chats/${chatId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title: cleaned }),
+          });
+          if (!res.ok) throw new Error("Rename failed");
+          const data = await res.json();
+
+          titleSpan.textContent = data.title;
+          closeAllChatMenus(null);
+        } catch (err) {
+          console.error(err);
+          alert("Failed to rename chat");
+        }
+      });
+
+      // Handler DELETE
+      chatsSection.addEventListener("click", async (e) => {
+        const btn = e.target.closest(".chat-delete");
+        if (!btn) return;
+
+        e.stopPropagation();
+        const item = btn.closest(".chat-item");
+        const chatId = item?.dataset?.chatId;
+        if (!chatId) return;
+
+        const confirmDelete = await openModal({
+          title: "Delete Chat",
+          message: "This action cannot be undone!",
+          icon: "https://cdn-icons-png.flaticon.com/512/1214/1214428.png",
+          isConfirm: true,
+        });
+        if (!confirmDelete) return;
+
+        try {
+          const res = await fetch(`/learnvid-ai/api/chats/${chatId}`, { method: "DELETE" });
+          if (!res.ok) throw new Error("Delete failed");
+
+          item.remove();
+
+          if (!document.querySelector(".chat-item[data-chat-id]")) {
+            const placeholder = document.createElement("div");
+            placeholder.id = "empty-state";
+            placeholder.className = "chat-item empty";
+            placeholder.textContent = "No chats yet";
+            chatsSection.appendChild(placeholder);
+          }
+          closeAllChatMenus(null);
+        } catch (err) {
+          console.error(err);
+          alert("Failed to delete chat");
+        }
+      });
+
+      // Draggable Floating Review Button (Global)
+      const floatingBtn = document.getElementById("floatingReviewBtn");
+      if (floatingBtn) {
+        // (Kode draggable sama seperti di chat.html, Anda bisa copy-paste di sini)
+        // ...
+      }
+
+      // Modal Helper (Diperlukan untuk sidebar)
+      function openModal({
+        title,
+        message = "",
+        icon = "",
+        placeholder = "",
+        defaultValue = "",
+        isConfirm = false,
+      }) {
+        return new Promise((resolve) => {
+          const overlay = document.getElementById("modal-overlay");
+          const titleEl = document.getElementById("modal-title");
+          // ... (sisa kode modal sama seperti di chat.html) ...
+
+          const msgEl = document.getElementById("modal-message");
+          const iconEl = document.getElementById("modal-icon");
+          const inputEl = document.getElementById("modal-input");
+          const okBtn = document.getElementById("modal-ok");
+          const cancelBtn = document.getElementById("modal-cancel");
+
+          titleEl.textContent = title;
+          msgEl.textContent = message;
+          iconEl.src = icon || "";
+          iconEl.style.display = icon ? "block" : "none";
+          inputEl.style.display = isConfirm ? "none" : "block";
+          inputEl.placeholder = placeholder;
+          inputEl.value = defaultValue;
+
+          overlay.style.display = "flex"; // Tampilkan modal
+          if (!isConfirm) inputEl.focus();
+
+          function closeModal(value) {
+            overlay.style.display = "none"; // Sembunyikan modal
+            okBtn.removeEventListener("click", onOk);
+            cancelBtn.removeEventListener("click", onCancel);
+            inputEl.removeEventListener("keydown", onEnter);
+            resolve(value);
+          }
+
+          function onOk() {
+            const val = isConfirm ? true : inputEl.value.trim();
+            closeModal(val || null);
+          }
+          function onCancel() {
+            closeModal(null);
+          }
+          function onEnter(e) {
+            if (e.key === "Enter") onOk();
+          }
+
+          okBtn.addEventListener("click", onOk);
+          cancelBtn.addEventListener("click", onCancel);
+          inputEl.addEventListener("keydown", onEnter);
+        });
+      }
+
+      // Pagination State
+      let allVideosData = [];
+      let filteredVideosData = [];
+      let currentPage = 1;
+      const videosPerPage = 9;
+
+      async function loadGalleryVideos() {
+        const grid = document.getElementById("gallery-grid");
+        grid.innerHTML =
+          "<p style='color:#112D4E; text-align:center; padding:20px;'>Loading...</p>";
+
+        try {
+          const res = await fetch("/learnvid-ai/api/gallery/videos");
+          if (!res.ok) {
+            throw new Error("Failed to fetch videos");
+          }
+          const videos = await res.json();
+
+          allVideosData = videos;
+          filteredVideosData = videos;
+
+          if (videos.length === 0) {
+            showEmptyState(grid, "No videos yet.");
+            hidePagination();
+            return;
+          }
+
+          renderVideos();
+          setupSearchFunctionality();
+        } catch (err) {
+          console.error(err);
+          grid.innerHTML =
+            '<p style="color:#d11a2a; text-align:center; padding:20px;">Failed to load videos.</p>';
+          hidePagination();
+        }
+      }
+
+      function renderVideos() {
+        const grid = document.getElementById("gallery-grid");
+
+        if (filteredVideosData.length === 0) {
+          showEmptyState(grid, "No videos found matching your search.");
+          hidePagination();
+          return;
+        }
+
+        const startIndex = (currentPage - 1) * videosPerPage;
+        const endIndex = startIndex + videosPerPage;
+        const videosToShow = filteredVideosData.slice(startIndex, endIndex);
+
+        grid.innerHTML = "";
+
+        videosToShow.forEach((v, index) => {
+          const videoUrl = v.video_url || v.url || v.path || v.file_path;
+          const videoTitle = v.title || "Untitled Video";
+
+          if (!videoUrl) {
+            console.warn("Video field not found for item:", v);
+            return;
+          }
+
+          const actualIndex = startIndex + index;
+          const card = document.createElement("div");
+          card.className = "video-card";
+          card.dataset.videoIndex = actualIndex;
+          card.dataset.videoUrl = videoUrl;
+          card.dataset.videoTitle = videoTitle;
+
+          card.innerHTML = `
+      <div class="video-thumbnail">
+        <video src="${videoUrl}" muted playsinline></video>
+        <div class="video-info">
+          <div class="video-title">${escapeHtml(videoTitle)}</div>
+          <div class="video-actions">
+            <button class="video-action-btn fullscreen-btn" title="View Fullscreen">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+              </svg>
+            </button>
+            <button class="video-action-btn download-btn" title="Download Video">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
+          const vid = card.querySelector("video");
+          vid.addEventListener("mouseenter", () => vid.play());
+          vid.addEventListener("mouseleave", () => {
+            vid.pause();
+            vid.currentTime = 0;
+          });
+
+          grid.appendChild(card);
+        });
+
+        updatePagination();
+        initializeVideoActions();
+      }
+
+      function showEmptyState(container, message) {
+        container.innerHTML = `
+    <div class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+        <circle cx="8.5" cy="8.5" r="1.5"/>
+        <polyline points="21 15 16 10 5 21"/>
+      </svg>
+      <h3>${message}</h3>
+      <p>Try adjusting your search or check back later.</p>
+    </div>
+  `;
+      }
+
+      function hidePagination() {
+        const paginationContainer = document.getElementById(
+          "pagination-container"
+        );
+        if (paginationContainer) {
+          paginationContainer.style.display = "none";
+        }
+      }
+
+      function updatePagination() {
+        const totalPages = Math.ceil(filteredVideosData.length / videosPerPage);
+        const paginationContainer = document.getElementById(
+          "pagination-container"
+        );
+
+        if (totalPages <= 1) {
+          paginationContainer.style.display = "none";
+          return;
+        }
+
+        paginationContainer.style.display = "flex";
+
+        const prevBtn = document.getElementById("prev-page-btn");
+        const nextBtn = document.getElementById("next-page-btn");
+        const numbersContainer = document.getElementById("pagination-numbers");
+
+        prevBtn.disabled = currentPage === 1;
+        nextBtn.disabled = currentPage === totalPages;
+
+        // Generate page numbers
+        numbersContainer.innerHTML = "";
+        const pageNumbers = generatePageNumbers(currentPage, totalPages);
+
+        pageNumbers.forEach((page) => {
+          const pageBtn = document.createElement("button");
+          pageBtn.className =
+            page === "..." ? "page-number ellipsis" : "page-number";
+
+          if (page === currentPage) {
+            pageBtn.classList.add("active");
+          }
+
+          pageBtn.textContent = page;
+
+          if (page !== "...") {
+            pageBtn.addEventListener("click", () => {
+              currentPage = page;
+              renderVideos();
+              scrollToTop();
+            });
+          }
+
+          numbersContainer.appendChild(pageBtn);
+        });
+
+        // Prev/Next button handlers
+        prevBtn.onclick = () => {
+          if (currentPage > 1) {
+            currentPage--;
+            renderVideos();
+            scrollToTop();
+          }
+        };
+
+        nextBtn.onclick = () => {
+          if (currentPage < totalPages) {
+            currentPage++;
+            renderVideos();
+            scrollToTop();
+          }
+        };
+      }
+
+      function generatePageNumbers(current, total) {
+        const pages = [];
+        const delta = 1; // Number of pages to show on each side of current page
+
+        if (total <= 7) {
+          for (let i = 1; i <= total; i++) {
+            pages.push(i);
+          }
+        } else {
+          pages.push(1);
+
+          if (current > delta + 2) {
+            pages.push("...");
+          }
+
+          const start = Math.max(2, current - delta);
+          const end = Math.min(total - 1, current + delta);
+
+          for (let i = start; i <= end; i++) {
+            pages.push(i);
+          }
+
+          if (current < total - delta - 1) {
+            pages.push("...");
+          }
+
+          pages.push(total);
+        }
+
+        return pages;
+      }
+
+      function setupSearchFunctionality() {
+        const searchInput = document.getElementById("search-input");
+        const clearBtn = document.getElementById("clear-search");
+
+        let searchTimeout;
+
+        searchInput.addEventListener("input", (e) => {
+          const query = e.target.value.trim();
+
+          // Show/hide clear button
+          clearBtn.style.display = query ? "flex" : "none";
+
+          // Debounce search
+          clearTimeout(searchTimeout);
+          searchTimeout = setTimeout(() => {
+            performSearch(query);
+          }, 300);
+        });
+
+        clearBtn.addEventListener("click", () => {
+          searchInput.value = "";
+          clearBtn.style.display = "none";
+          performSearch("");
+          searchInput.focus();
+        });
+      }
+
+      function performSearch(query) {
+        if (!query) {
+          filteredVideosData = allVideosData;
+        } else {
+          const lowerQuery = query.toLowerCase();
+          filteredVideosData = allVideosData.filter((video) => {
+            const title = (video.title || "").toLowerCase();
+            return title.includes(lowerQuery);
+          });
+        }
+
+        currentPage = 1;
+        renderVideos();
+      }
+
+      function scrollToTop() {
+        const galleryContainer = document.querySelector(".gallery-container");
+        galleryContainer.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      // Initialize video action handlers (keep this function as is)
+      function initializeVideoActions() {
+        const grid = document.getElementById("gallery-grid");
+        let currentVideoIndex = 0;
+
+        // Use filtered data for carousel
+        const allVideos = filteredVideosData.map((v, index) => ({
+          url: v.video_url || v.url || v.path || v.file_path,
+          title: v.title || "Untitled Video",
+          index: index,
+        }));
+
+        // Download button handler
+        grid.addEventListener("click", async (e) => {
+          const downloadBtn = e.target.closest(".download-btn");
+          if (!downloadBtn) return;
+
+          e.preventDefault();
+          e.stopPropagation();
+
+          const card = downloadBtn.closest(".video-card");
+          const videoUrl = card.dataset.videoUrl;
+          const videoTitle = card.dataset.videoTitle;
+
+          downloadVideo(videoUrl, videoTitle);
+        });
+
+        // Klik di mana saja pada card (kecuali tombol download) -> fullscreen
+        grid.addEventListener("click", (e) => {
+          // Jika klik berasal dari tombol download, biarkan handler di atas yang jalan
+          if (e.target.closest(".download-btn")) {
+            return;
+          }
+
+          const card = e.target.closest(".video-card");
+          if (!card) return;
+
+          e.preventDefault();
+          e.stopPropagation();
+
+          currentVideoIndex = parseInt(card.dataset.videoIndex);
+          openFullscreenModal(currentVideoIndex);
+        });
+
+        // Create fullscreen modal
+        function openFullscreenModal(index) {
+          let modal = document.getElementById("fullscreen-modal");
+          if (modal) modal.remove();
+
+          modal = document.createElement("div");
+          modal.id = "fullscreen-modal";
+          modal.className = "fullscreen-modal active";
+
+          const video = allVideos[index];
+
+          modal.innerHTML = `
+      <div class="fullscreen-content">
+        <button class="close-fullscreen-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+        <div class="fullscreen-video-container">
+          <video src="${video.url}" controls autoplay></video>
+        </div>
+        <div class="fullscreen-controls">
+          <div class="fullscreen-title">${escapeHtml(video.title)}</div>
+          <div class="carousel-controls">
+            <button class="carousel-btn prev-btn" ${
+              index === 0 ? "disabled" : ""
+            }>
+              <svg viewBox="0 0 24 24">
+                <polyline points="15 18 9 12 15 6"/>
+              </svg>
+            </button>
+            <button class="carousel-btn next-btn" ${
+              index === allVideos.length - 1 ? "disabled" : ""
+            }>
+              <svg viewBox="0 0 24 24">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
+          document.body.appendChild(modal);
+
+          modal
+            .querySelector(".close-fullscreen-btn")
+            .addEventListener("click", () => {
+              modal.classList.remove("active");
+              setTimeout(() => modal.remove(), 300);
+            });
+
+          modal.addEventListener("click", (e) => {
+            if (e.target === modal) {
+              modal.classList.remove("active");
+              setTimeout(() => modal.remove(), 300);
+            }
+          });
+
+          modal.querySelector(".prev-btn").addEventListener("click", () => {
+            if (index > 0) {
+              currentVideoIndex = index - 1;
+              modal.remove();
+              openFullscreenModal(currentVideoIndex);
+            }
+          });
+
+          modal.querySelector(".next-btn").addEventListener("click", () => {
+            if (index < allVideos.length - 1) {
+              currentVideoIndex = index + 1;
+              modal.remove();
+              openFullscreenModal(currentVideoIndex);
+            }
+          });
+
+          const keyHandler = (e) => {
+            if (e.key === "Escape") {
+              modal.classList.remove("active");
+              setTimeout(() => modal.remove(), 300);
+              document.removeEventListener("keydown", keyHandler);
+            } else if (e.key === "ArrowLeft" && index > 0) {
+              currentVideoIndex = index - 1;
+              modal.remove();
+              document.removeEventListener("keydown", keyHandler);
+              openFullscreenModal(currentVideoIndex);
+            } else if (e.key === "ArrowRight" && index < allVideos.length - 1) {
+              currentVideoIndex = index + 1;
+              modal.remove();
+              document.removeEventListener("keydown", keyHandler);
+              openFullscreenModal(currentVideoIndex);
+            }
+          };
+          document.addEventListener("keydown", keyHandler);
+        }
+
+        async function downloadVideo(url, title) {
+          try {
+            const response = await fetch(url);
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = downloadUrl;
+            a.download = `${title
+              .replace(/[^a-z0-9]/gi, "_")
+              .toLowerCase()}.mp4`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(downloadUrl);
+            document.body.removeChild(a);
+          } catch (error) {
+            console.error("Download failed:", error);
+            alert("Failed to download video");
+          }
+        }
+      }
+
+      // Keep the dummy frames function for local testing
+      function loadDummyFrames() {
+        allVideosData = Array.from({ length: 25 }, (_, i) => ({
+          title: `Lorem Ipsum Video ${i + 1}`,
+          video_url: "#",
+        }));
+        filteredVideosData = allVideosData;
+        renderVideos();
+        setupSearchFunctionality();
+      }
+
+      // Initialize on page load
+      if (location.protocol === "file:" || location.hostname === "127.0.0.1") {
+        loadDummyFrames();
+      } else {
+        loadGalleryVideos();
+      }
+
+      // Initialize video action handlers
+      function initializeVideoActions() {
+        const grid = document.getElementById("gallery-grid");
+        let currentVideoIndex = 0;
+        let allVideos = [];
+
+        // Collect all video data
+        document.querySelectorAll(".video-card").forEach((card, index) => {
+          allVideos.push({
+            url: card.dataset.videoUrl,
+            title: card.dataset.videoTitle,
+            index: index,
+          });
+        });
+
+        // Fullscreen button handler
+        grid.addEventListener("click", (e) => {
+          const fullscreenBtn = e.target.closest(".fullscreen-btn");
+          if (!fullscreenBtn) return;
+
+          e.preventDefault();
+          e.stopPropagation();
+
+          const card = fullscreenBtn.closest(".video-card");
+          currentVideoIndex = parseInt(card.dataset.videoIndex);
+
+          openFullscreenModal(currentVideoIndex);
+        });
+
+        // Download button handler
+        grid.addEventListener("click", async (e) => {
+          const downloadBtn = e.target.closest(".download-btn");
+          if (!downloadBtn) return;
+
+          e.preventDefault();
+          e.stopPropagation();
+
+          const card = downloadBtn.closest(".video-card");
+          const videoUrl = card.dataset.videoUrl;
+          const videoTitle = card.dataset.videoTitle;
+
+          downloadVideo(videoUrl, videoTitle);
+        });
+
+        // Klik di mana saja pada card (kecuali tombol download/fullscreen) -> fullscreen
+        grid.addEventListener("click", (e) => {
+          // Jika klik berasal dari tombol download atau fullscreen, biarkan handler yang lain yang menangani
+          if (
+            e.target.closest(".download-btn") ||
+            e.target.closest(".fullscreen-btn")
+          ) {
+            return;
+          }
+
+          const card = e.target.closest(".video-card");
+          if (!card) return;
+
+          e.preventDefault();
+          e.stopPropagation();
+
+          currentVideoIndex = parseInt(card.dataset.videoIndex);
+          openFullscreenModal(currentVideoIndex);
+        });
+
+        // Create fullscreen modal
+        function openFullscreenModal(index) {
+          // Remove existing modal if any
+          let modal = document.getElementById("fullscreen-modal");
+          if (modal) modal.remove();
+
+          // Create new modal
+          modal = document.createElement("div");
+          modal.id = "fullscreen-modal";
+          modal.className = "fullscreen-modal active";
+
+          const video = allVideos[index];
+
+          modal.innerHTML = `
+            <div class="fullscreen-content">
+                <button class="close-fullscreen-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+                <div class="fullscreen-video-container">
+                    <video src="${video.url}" controls autoplay></video>
+                </div>
+                <div class="fullscreen-controls">
+                    <div class="fullscreen-title">${escapeHtml(
+                      video.title
+                    )}</div>
+                    <div class="carousel-controls">
+                        <button class="carousel-btn prev-btn" ${
+                          index === 0 ? "disabled" : ""
+                        }>
+                            <svg viewBox="0 0 24 24">
+                                <polyline points="15 18 9 12 15 6"/>
+                            </svg>
+                        </button>
+                        <button class="carousel-btn next-btn" ${
+                          index === allVideos.length - 1 ? "disabled" : ""
+                        }>
+                            <svg viewBox="0 0 24 24">
+                                <polyline points="9 18 15 12 9 6"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+          document.body.appendChild(modal);
+
+          // Close button handler
+          modal
+            .querySelector(".close-fullscreen-btn")
+            .addEventListener("click", () => {
+              modal.classList.remove("active");
+              setTimeout(() => modal.remove(), 300);
+            });
+
+          // Close on backdrop click
+          modal.addEventListener("click", (e) => {
+            if (e.target === modal) {
+              modal.classList.remove("active");
+              setTimeout(() => modal.remove(), 300);
+            }
+          });
+
+          // Previous button handler
+          modal.querySelector(".prev-btn").addEventListener("click", () => {
+            if (index > 0) {
+              currentVideoIndex = index - 1;
+              modal.remove();
+              openFullscreenModal(currentVideoIndex);
+            }
+          });
+
+          // Next button handler
+          modal.querySelector(".next-btn").addEventListener("click", () => {
+            if (index < allVideos.length - 1) {
+              currentVideoIndex = index + 1;
+              modal.remove();
+              openFullscreenModal(currentVideoIndex);
+            }
+          });
+
+          // Keyboard navigation
+          const keyHandler = (e) => {
+            if (e.key === "Escape") {
+              modal.classList.remove("active");
+              setTimeout(() => modal.remove(), 300);
+              document.removeEventListener("keydown", keyHandler);
+            } else if (e.key === "ArrowLeft" && index > 0) {
+              currentVideoIndex = index - 1;
+              modal.remove();
+              document.removeEventListener("keydown", keyHandler);
+              openFullscreenModal(currentVideoIndex);
+            } else if (e.key === "ArrowRight" && index < allVideos.length - 1) {
+              currentVideoIndex = index + 1;
+              modal.remove();
+              document.removeEventListener("keydown", keyHandler);
+              openFullscreenModal(currentVideoIndex);
+            }
+          };
+          document.addEventListener("keydown", keyHandler);
+        }
+
+        // Download function
+        async function downloadVideo(url, title) {
+          try {
+            const response = await fetch(url);
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = downloadUrl;
+            a.download = `${title
+              .replace(/[^a-z0-9]/gi, "_")
+              .toLowerCase()}.mp4`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(downloadUrl);
+            document.body.removeChild(a);
+          } catch (error) {
+            console.error("Download failed:", error);
+            alert("Failed to download video");
+          }
+        }
+      }
+
+      // ⬅️ PANGGIL DI LUAR, BUKAN DI DALAM FUNGSI
+      // loadGalleryVideos();
+      // Jika dibuka tanpa server (file:/// atau localhost tanpa API)
+      function loadDummyFrames() {
+        const grid = document.getElementById("gallery-grid");
+        grid.innerHTML = "";
+
+        const dummyCount = 9;
+
+        for (let i = 0; i < dummyCount; i++) {
+          const card = document.createElement("div");
+          card.className = "video-card";
+          card.dataset.videoIndex = i;
+          card.dataset.videoUrl = "#";
+          card.dataset.videoTitle = "Lorem Ipsum Video " + (i + 1);
+
+          card.innerHTML = `
+            <div class="video-thumbnail">
+                <div style="
+                    width:100%;
+                    height:100%;
+                    background:#222;
+                    border-radius:12px;
+                    position:absolute;
+                    top:0;
+                    left:0;
+                "></div>
+                <div class="video-info">
+                    <div class="video-title">Lorem Ipsum Video ${i + 1}</div>
+                    <div class="video-actions">
+                        <button class="video-action-btn fullscreen-btn" title="View Fullscreen">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+                            </svg>
+                        </button>
+                        <button class="video-action-btn download-btn" title="Download Video">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="7 10 12 15 17 10"/>
+                                <line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+          grid.appendChild(card);
+        }
+
+        initializeVideoActions();
+      }
+
+      // Selalu load dari API backend (DB)
+      loadGalleryVideos();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LearnVid AI - FAQ</title>
+    <link rel="icon" type="image/svg+xml" href="/learnvid-ai/static/logo.svg" />
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap");
+
+      @font-face {
+        font-family: "Cabinet Grotesk";
+        src: url("{{ url_for('static', path='font/CabinetGrotesk-Regular.woff2') }}")
+            format("woff2"),
+          url("{{ url_for('static', path='font/CabinetGrotesk-Regular.woff') }}")
+            format("woff");
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      :root {
+        --font-display: "Cabinet Grotesk", sans-serif;
+        --font-body: "Montserrat", sans-serif;
+        --nav-height: 88px;
+      }
+
+      @import url("https://fonts.googleapis.com/css2?family=Costaline:wght@400&display=swap");
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      :root {
+        --page-gutter: 14px;
+      }
+
+      body {
+        font-family: var(--font-body);
+        background: linear-gradient(135deg, #112d4e 0%, #1a3f63 100%);
+        color: #f9f7f7;
+        overflow-x: hidden;
+        min-height: 100vh;
+        padding: 0 var(--page-gutter) 0;
+        display: flex;
+        flex-direction: column;
+      }
+
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6 {
+        font-family: var(--font-display);
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px;
+      }
+
+      /* Navigation (mirrors landing page) */
+      nav {
+        padding: 20px 0;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        transition: background 0.3s ease, box-shadow 0.3s ease,
+          padding 0.25s ease, transform 0.3s ease;
+        backdrop-filter: blur(0px);
+        margin-left: calc(-1 * var(--page-gutter));
+        margin-right: calc(-1 * var(--page-gutter));
+        width: calc(100% + (var(--page-gutter) * 2));
+      }
+
+      nav.nav-scrolled {
+        background: rgba(13, 31, 55, 0.9);
+        backdrop-filter: blur(12px);
+        box-shadow: 0 14px 40px rgba(0, 0, 0, 0.35);
+        padding: 14px 0;
+        animation: navReveal 0.35s ease;
+        border-bottom: 1px solid rgba(219, 226, 239, 0.15);
+      }
+
+      nav.nav-hidden {
+        transform: translateY(-100%);
+      }
+
+      .nav-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .logo {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #f9f7f7;
+        display: none;
+      }
+
+      .nav-links {
+        display: flex;
+        gap: 40px;
+        list-style: none;
+      }
+
+      .nav-links a {
+        color: #dbe2ef;
+        text-decoration: none;
+        font-size: 16px;
+        transition: all 0.3s ease;
+        position: relative;
+      }
+
+      .nav-links a::after {
+        content: "";
+        position: absolute;
+        bottom: -5px;
+        left: 0;
+        width: 0;
+        height: 2px;
+        background: #f9f7f7;
+        transition: width 0.3s ease;
+      }
+
+      .nav-links a:hover::after,
+      .nav-links a[href="/faq"]::after {
+        width: 100%;
+      }
+
+      .nav-links a:hover,
+      .nav-links a[href="/faq"] {
+        color: #f9f7f7;
+      }
+
+      .nav-buttons {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+      }
+
+      .register-btn {
+        background: #f9f7f7;
+        color: #112d4e;
+        padding: 12px 24px;
+        border-radius: 25px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        border: 2px solid #f9f7f7;
+      }
+
+      .register-btn:hover {
+        background: transparent;
+        color: #f9f7f7;
+      }
+
+      .login-link {
+        color: #dbe2ef;
+        text-decoration: none;
+        transition: color 0.3s ease;
+      }
+
+      .login-link:hover {
+        color: #f9f7f7;
+      }
+
+      /* Mobile Menu */
+      .mobile-menu-btn {
+        display: none;
+        flex-direction: column;
+        gap: 7px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 5px;
+      }
+
+      .mobile-menu-btn span {
+        width: 25px;
+        height: 3px;
+        background: #f9f7f7;
+        border-radius: 2px;
+        transition: all 0.3s ease;
+      }
+
+      .mobile-menu-btn.active span:nth-child(1) {
+        transform: rotate(45deg) translate(8px, 8px);
+      }
+
+      .mobile-menu-btn.active span:nth-child(2) {
+        opacity: 0;
+      }
+
+      .mobile-menu-btn.active span:nth-child(3) {
+        transform: rotate(-45deg) translate(7px, -7px);
+      }
+
+      .mobile-nav {
+        display: none;
+        position: fixed;
+        top: var(--nav-height, 70px);
+        left: 0;
+        right: 0;
+        background: rgba(17, 45, 78, 0.98);
+        backdrop-filter: blur(20px);
+        padding: 20px;
+        z-index: 99;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      }
+
+      .mobile-nav.active {
+        display: block;
+        animation: slideDown 0.3s ease;
+      }
+
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .mobile-nav ul {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      .mobile-nav a {
+        color: #dbe2ef;
+        text-decoration: none;
+        font-size: 18px;
+        display: block;
+        padding: 10px;
+        transition: color 0.3s ease;
+      }
+
+      .mobile-nav a:hover,
+      .mobile-nav a[href="/faq"] {
+        color: #f9f7f7;
+        font-weight: bold;
+      }
+
+      /* Content Wrapper */
+      .content-wrapper {
+        background: rgba(249, 247, 247, 0.98);
+        backdrop-filter: blur(20px);
+        border-radius: 24px;
+        padding: 50px 40px;
+        box-shadow: 0 20px 60px rgba(17, 45, 78, 0.3);
+        width: 100%;
+        max-width: 900px;
+        margin: 40px auto 0;
+        z-index: 10;
+        animation: slideUp 0.8s ease-out;
+        color: #112d4e;
+        position: relative;
+      }
+      @keyframes slideUp {
+        from {
+          opacity: 0;
+          transform: translateY(30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .content-wrapper h1 {
+        font-size: 2.8rem;
+        margin-bottom: 15px;
+        text-align: center;
+        color: #112d4e;
+        font-weight: 600;
+      }
+
+      .subtitle {
+        text-align: center;
+        color: #3f72af;
+        font-size: 1.1rem;
+        margin-bottom: 40px;
+        opacity: 0.9;
+      }
+
+      /* FAQ Container */
+      .faq-container {
+        margin-top: 20px;
+      }
+
+      /* FAQ Item */
+      .faq-item {
+        border-bottom: 1px solid #dbe2ef;
+        transition: all 0.3s ease;
+      }
+      .faq-item:last-child {
+        border-bottom: none;
+      }
+      .faq-item:hover {
+        background: rgba(63, 114, 175, 0.03);
+        border-radius: 12px;
+      }
+
+      .faq-question {
+        width: 100%;
+        background: none;
+        border: none;
+        padding: 28px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        text-align: left;
+        font-family: var(--font-display);
+        transition: all 0.3s ease;
+      }
+
+      .faq-question:hover {
+        padding-left: 28px;
+      }
+
+      .faq-question span {
+        font-size: 1.2rem;
+        font-weight: 500;
+        color: #112d4e;
+        transition: color 0.3s ease;
+      }
+
+      .faq-item.active .faq-question span {
+        color: #3f72af;
+      }
+
+      .faq-icon {
+        font-size: 2rem;
+        font-weight: 300;
+        color: #3f72af;
+        transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        min-width: 30px;
+        text-align: center;
+      }
+
+      .faq-answer {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+          padding 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+        opacity: 0;
+      }
+
+      .faq-answer p {
+        font-size: 1.05rem;
+        color: #445;
+        line-height: 1.8;
+        padding: 0 20px 28px 20px;
+        animation: fadeInText 0.5s ease forwards;
+      }
+
+      @keyframes fadeInText {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      main {
+        flex: 1;
+      }
+
+      @keyframes navReveal {
+        from {
+          transform: translateY(-14px);
+          opacity: 0.9;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      /* Active State */
+      .faq-item.active .faq-answer {
+        max-height: 500px;
+        opacity: 1;
+      }
+
+      .faq-item.active .faq-icon {
+        transform: rotate(135deg);
+        color: #3f72af;
+      }
+
+      /* Number Badge (Optional Enhancement) */
+      .faq-item {
+        position: relative;
+      }
+
+      .faq-item::before {
+        position: absolute;
+        left: -15px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 8px;
+        height: 8px;
+        background: #3f72af;
+        border-radius: 50%;
+        opacity: 0;
+        transition: all 0.3s ease;
+      }
+
+      .faq-item.active::before {
+        opacity: 1;
+        left: 0;
+      }
+
+      /* Responsive */
+      @media (max-width: 768px) {
+        .logo {
+          display: block;
+          font-size: 1.3rem;
+        }
+        .nav-links {
+          display: none;
+        }
+        .mobile-menu-btn {
+          display: flex;
+        }
+        .nav-buttons {
+          gap: 15px;
+        }
+        nav.nav-scrolled {
+          padding: 12px 0;
+        }
+        .register-btn {
+          padding: 10px 20px;
+          font-size: 14px;
+        }
+        .login-link {
+          font-size: 14px;
+        }
+        .content-wrapper {
+          padding: 35px 25px;
+          margin-top: 20px;
+          border-radius: 20px;
+        }
+        .content-wrapper h1 {
+          font-size: 2rem;
+          margin-bottom: 10px;
+        }
+        .subtitle {
+          font-size: 1rem;
+          margin-bottom: 30px;
+        }
+        .faq-question {
+          padding: 22px 15px;
+        }
+        .faq-question:hover {
+          padding-left: 15px;
+        }
+        .faq-question span {
+          font-size: 1.05rem;
+          line-height: 1.4;
+        }
+        .faq-icon {
+          font-size: 1.7rem;
+          min-width: 25px;
+        }
+        .faq-answer p {
+          font-size: 0.98rem;
+          padding: 0 15px 22px 15px;
+        }
+      }
+
+      /* Footer */
+      footer {
+        padding: 32px 0;
+        background: rgba(13, 31, 55, 0.9);
+        border-top: 1px solid rgba(219, 226, 239, 0.12);
+        margin-top: 60px;
+        width: calc(100% + var(--page-gutter) * 2);
+        margin-left: calc(-1 * var(--page-gutter));
+        position: relative;
+        overflow: hidden;
+      }
+
+      footer::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(
+          circle at 10% 10%,
+          rgba(108, 194, 255, 0.07),
+          transparent 35%
+        );
+        pointer-events: none;
+      }
+
+      .footer-content {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        gap: 12px 18px;
+        color: #dbe2ef;
+        font-size: 0.95rem;
+        position: relative;
+        z-index: 1;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px;
+      }
+
+      .footer-brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .footer-links {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+
+      .footer-links a {
+        color: #dbe2ef;
+        text-decoration: none;
+        transition: color 0.2s ease;
+      }
+
+      .footer-links a:hover {
+        color: #f9f7f7;
+      }
+
+      @media (max-width: 720px) {
+        footer {
+          padding: 28px 0 34px;
+        }
+
+        .footer-content {
+          grid-template-columns: 1fr;
+          text-align: center;
+          justify-items: center;
+          gap: 14px;
+        }
+
+        .footer-brand {
+          justify-content: center;
+        }
+
+        .footer-links {
+          justify-content: center;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav>
+      <div class="container">
+        <div class="nav-container">
+          <div class="logo">LearnVid AI</div>
+          <ul class="nav-links">
+            <li><a href="/learnvid-ai/">Home</a></li>
+            <li><a href="/learnvid-ai/how-it-works">How it works</a></li>
+            <li><a href="/learnvid-ai/faq">FAQ</a></li>
+            <li><a href="/learnvid-ai/reviews">Review</a></li>
+          </ul>
+          <div class="nav-buttons">
+            <a href="/learnvid-ai/register" class="register-btn">Register</a>
+            <a href="/learnvid-ai/login" class="login-link">Login</a>
+          </div>
+          <button class="mobile-menu-btn" aria-label="Toggle menu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <div class="mobile-nav">
+      <ul>
+        <li><a href="/learnvid-ai/">Home</a></li>
+        <li><a href="/learnvid-ai/how-it-works">How it works</a></li>
+        <li><a href="/learnvid-ai/faq">FAQ</a></li>
+        <li><a href="/learnvid-ai/reviews">Review</a></li>
+      </ul>
+    </div>
+
+    <main class="content-wrapper">
+      <h1>Frequently Asked Questions</h1>
+      <p class="subtitle">Find answers to common questions about LearnVid AI</p>
+
+      <div class="faq-container">
+        <div class="faq-item" data-number="1">
+          <button class="faq-question" aria-expanded="false">
+            <span>What is LearnVid AI?</span>
+            <span class="faq-icon">+</span>
+          </button>
+          <div class="faq-answer">
+            <p>
+              LearnVid AI is an AI-powered learning platform that can turn your
+              text prompts into concise, engaging educational videos
+              automatically.
+            </p>
+          </div>
+        </div>
+
+        <div class="faq-item" data-number="2">
+          <button class="faq-question" aria-expanded="false">
+            <span>How do I create a video?</span>
+            <span class="faq-icon">+</span>
+          </button>
+          <div class="faq-answer">
+            <p>
+              After logging in, go to the chat page. Click the
+              <strong>video icon</strong>
+              next to the chat box until it lights up. Then type your topic, for
+              example: "Create a video about the Industrial Revolution."
+            </p>
+          </div>
+        </div>
+
+        <div class="faq-item" data-number="3">
+          <button class="faq-question" aria-expanded="false">
+            <span>How long does it take to make a video?</span>
+            <span class="faq-icon">+</span>
+          </button>
+          <div class="faq-answer">
+            <p>
+              Generation time varies based on topic complexity and server queue.
+              It typically takes between 10 and 40 seconds.
+            </p>
+          </div>
+        </div>
+
+        <div class="faq-item" data-number="4">
+          <button class="faq-question" aria-expanded="false">
+            <span>Can I download the video after it’s created?</span>
+            <span class="faq-icon">+</span>
+          </button>
+          <div class="faq-answer">
+            <p>
+              Absolutely. Every video generated by the AI includes a "Download
+              Video" button right below it.
+            </p>
+          </div>
+        </div>
+
+        <div class="faq-item" data-number="5">
+          <button class="faq-question" aria-expanded="false">
+            <span>What topics can I generate videos for?</span>
+            <span class="faq-icon">+</span>
+          </button>
+          <div class="faq-answer">
+            <p>
+              You can create videos on a wide range of topics, especially
+              educational subjects like math, science, history, or other concept
+              explanations.
+            </p>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <div class="footer-content">
+        <div class="footer-brand">
+          <div class="footer-copy">
+            &copy; 2025 LearnVid AI. All rights reserved.
+          </div>
+        </div>
+        <div class="footer-links">
+          <a href="/learnvid-ai/how-it-works">How it works</a>
+          <a href="/learnvid-ai/faq">FAQ</a>
+          <a href="/learnvid-ai/reviews">Review</a>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      const nav = document.querySelector("nav");
+
+      const setNavHeight = () => {
+        if (!nav) return;
+        document.documentElement.style.setProperty(
+          "--nav-height",
+          `${nav.offsetHeight}px`
+        );
+      };
+
+      const updateNavState = () => {
+        const scrolled = window.scrollY > 10;
+        nav.classList.toggle("nav-scrolled", scrolled);
+        nav.classList.remove("nav-hidden");
+        setNavHeight();
+      };
+
+      updateNavState();
+      window.addEventListener("resize", setNavHeight);
+      window.addEventListener("scroll", updateNavState);
+
+      // Mobile Nav Toggle
+      const mobileMenuBtn = document.querySelector(".mobile-menu-btn");
+      const mobileNav = document.querySelector(".mobile-nav");
+
+      mobileMenuBtn.addEventListener("click", function () {
+        this.classList.toggle("active");
+        mobileNav.classList.toggle("active");
+      });
+
+      document.addEventListener("click", function (event) {
+        const isClickInside =
+          mobileMenuBtn.contains(event.target) ||
+          mobileNav.contains(event.target);
+        if (!isClickInside && mobileNav.classList.contains("active")) {
+          mobileMenuBtn.classList.remove("active");
+          mobileNav.classList.remove("active");
+        }
+      });
+
+      document.querySelectorAll(".mobile-nav a").forEach((link) => {
+        link.addEventListener("click", () => {
+          mobileMenuBtn.classList.remove("active");
+          mobileNav.classList.remove("active");
+        });
+      });
+
+      // FAQ Accordion with Smooth Animation
+      const faqItems = document.querySelectorAll(".faq-item");
+
+      faqItems.forEach((item) => {
+        const button = item.querySelector(".faq-question");
+        const answer = item.querySelector(".faq-answer");
+
+        button.addEventListener("click", () => {
+          const isCurrentlyActive = item.classList.contains("active");
+
+          // Close all other items with smooth animation
+          faqItems.forEach((otherItem) => {
+            if (otherItem !== item && otherItem.classList.contains("active")) {
+              otherItem.classList.remove("active");
+              otherItem
+                .querySelector(".faq-question")
+                .setAttribute("aria-expanded", "false");
+            }
+          });
+
+          // Toggle current item
+          if (!isCurrentlyActive) {
+            item.classList.add("active");
+            button.setAttribute("aria-expanded", "true");
+
+            // Smooth scroll into view if needed (optional)
+            setTimeout(() => {
+              const rect = item.getBoundingClientRect();
+              const isInView =
+                rect.top >= 0 && rect.bottom <= window.innerHeight;
+              if (!isInView) {
+                item.scrollIntoView({ behavior: "smooth", block: "nearest" });
+              }
+            }, 100);
+          } else {
+            item.classList.remove("active");
+            button.setAttribute("aria-expanded", "false");
+          }
+        });
+      });
+
+      // Keyboard accessibility
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          faqItems.forEach((item) => {
+            item.classList.remove("active");
+            item
+              .querySelector(".faq-question")
+              .setAttribute("aria-expanded", "false");
+          });
+        }
+      });
+    </script>
+  </body>
+</html>
