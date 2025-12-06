@@ -62,11 +62,21 @@ def _get_video_storage_dir() -> Path:
 def _move_video_to_storage(temp_video_path: str, final_name: str):
     """
     Upload ke Cloudflare R2 dan return public URL.
+
+    Didesain untuk langsung simpan ke R2 (tanpa copy lokal permanen).
+    Ditambah timeout supaya kalau koneksi bermasalah, proses cepat gagal
+    dan bisa mengirim status "error" ke frontend.
     """
+    from botocore.config import Config
+
     temp_video = Path(temp_video_path)
 
     if not temp_video.exists():
         raise FileNotFoundError("Video tidak ditemukan")
+
+    # Config timeout agar tidak menggantung lama
+    connect_timeout = int(os.getenv("R2_CONNECT_TIMEOUT", "10"))
+    read_timeout = int(os.getenv("R2_READ_TIMEOUT", "300"))
 
     r2 = boto3.client(
         "s3",
@@ -74,23 +84,36 @@ def _move_video_to_storage(temp_video_path: str, final_name: str):
         aws_access_key_id=os.getenv("R2_ACCESS_KEY_ID"),
         aws_secret_access_key=os.getenv("R2_SECRET_ACCESS_KEY"),
         region_name="auto",
+        config=Config(connect_timeout=connect_timeout, read_timeout=read_timeout),
     )
 
     bucket = os.getenv("R2_BUCKET_NAME")
     public_base = os.getenv("R2_BUCKET_PUBLIC_URL")
 
-    # Upload file ke R2
-    r2.upload_file(
-        Filename=str(temp_video),
-        Bucket=bucket,
-        Key=final_name,
-        ExtraArgs={"ContentType": "video/mp4"}
-    )
+    print(f"[STORAGE] Uploading video to R2 bucket '{bucket}' as '{final_name}' "
+          f"(connect_timeout={connect_timeout}s, read_timeout={read_timeout}s)")
 
-    # Setelah upload, hapus file lokal
-    temp_video.unlink()
+    try:
+        r2.upload_file(
+            Filename=str(temp_video),
+            Bucket=bucket,
+            Key=final_name,
+            ExtraArgs={"ContentType": "video/mp4"},
+        )
+    except Exception as e:
+        # Log jelas supaya kelihatan di server
+        print(f"[STORAGE ERROR] Failed to upload to R2: {e}")
+        raise
+    finally:
+        # Hapus file lokal jika masih ada (supaya tidak numpuk)
+        try:
+            if temp_video.exists():
+                temp_video.unlink()
+        except Exception as cleanup_err:
+            print(f"[STORAGE WARN] Could not delete temp file: {cleanup_err}")
 
     public_url = f"{public_base}/{final_name}"
+    print(f"[STORAGE] R2 public URL: {public_url}")
     return public_url
 
 def generate_educational_video(
